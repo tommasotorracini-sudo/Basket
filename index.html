@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Campetti</title>
+  <meta name="description" content="Prototipo di tesi: trovare un campo da basket, vedere chi c'è e organizzare una partita spontanea.">
+  <meta name="theme-color" content="#111111">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner">
+    Prototipo di tesi: i campi vengono da OpenStreetMap, presenze, partite e chat sono simulate.
+    <button type="button" class="link" id="closeBanner" aria-label="Chiudi avviso">Ok</button>
+  </div>
+
+  <main>
+    <!-- MAPPA -->
+    <section class="view view--map is-active" id="view-map" aria-label="Mappa dei campi">
+      <div id="map" role="application" aria-label="Mappa"></div>
+
+      <div class="map-top">
+        <div class="chips" role="group" aria-label="Filtri">
+          <button type="button" class="chip" data-filter="lit" aria-pressed="false">Illuminato</button>
+          <button type="button" class="chip" data-filter="hard" aria-pressed="false">Asfalto o cemento</button>
+          <button type="button" class="chip" data-filter="public" aria-pressed="false">Accesso libero</button>
+          <button type="button" class="chip" data-filter="busy" aria-pressed="false">Si gioca ora</button>
+        </div>
+      </div>
+
+      <div class="map-actions">
+        <button type="button" class="btn btn--light" id="searchArea">Cerca campi in quest'area</button>
+        <button type="button" class="btn btn--icon btn--light" id="locate" aria-label="Vai alla mia posizione">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <p class="map-status" id="mapStatus" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- PARTITE -->
+    <section class="view" id="view-games" aria-label="Partite">
+      <header class="view-head"><h1>Partite vicine</h1></header>
+      <div class="list" id="gamesList"></div>
+    </section>
+
+    <!-- ALLENAMENTO -->
+    <section class="view" id="view-training" aria-label="Allenamento">
+      <header class="view-head"><h1>Allenamento</h1></header>
+      <div class="card">
+        <h2>Tiri liberi</h2>
+        <p class="muted">Quanti ne hai segnati su 10? Il grafico mostra le ultime sessioni.</p>
+        <div class="stepper" role="group" aria-label="Tiri liberi segnati">
+          <button type="button" class="btn btn--icon" id="ftMinus" aria-label="Uno in meno">−</button>
+          <output id="ftValue">5</output><span class="muted">/ 10</span>
+          <button type="button" class="btn btn--icon" id="ftPlus" aria-label="Uno in più">+</button>
+        </div>
+        <button type="button" class="btn btn--primary btn--block" id="ftSave">Salva sessione</button>
+        <div class="bars" id="ftBars" aria-label="Ultime sessioni"></div>
+      </div>
+      <div class="card">
+        <h2>Esercizi</h2>
+        <ul class="drills">
+          <li><strong>Tiro</strong> · 5 posizioni intorno all'area, 10 tiri per posizione</li>
+          <li><strong>Palleggio</strong> · 2 minuti mano debole, 2 minuti crossover</li>
+          <li><strong>Passaggio</strong> · passaggi al muro, 3 serie da 30</li>
+          <li><strong>Ball handling</strong> · giri intorno a vita e gambe, 3 serie</li>
+        </ul>
+        <p class="muted small">Esercizi di esempio, da sostituire con i contenuti definitivi.</p>
+      </div>
+    </section>
+
+    <!-- PROFILO -->
+    <section class="view" id="view-profile" aria-label="Profilo">
+      <header class="view-head"><h1>Profilo</h1></header>
+      <form class="card" id="profileForm">
+        <label class="field">Nickname
+          <input type="text" id="nickname" maxlength="24" autocomplete="nickname" placeholder="Come ti chiamano al campo">
+        </label>
+        <label class="field">Posizione preferita
+          <select id="position">
+            <option value="">Nessuna preferenza</option>
+            <option>Playmaker</option>
+            <option>Guardia</option>
+            <option>Ala</option>
+            <option>Centro</option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn--primary btn--block">Salva</button>
+        <p class="muted small">Nessun livello e nessuna valutazione: ci si riconosce giocando.</p>
+      </form>
+      <div class="card">
+        <h2>Le tue partite</h2>
+        <div id="history"></div>
+      </div>
+      <div class="card">
+        <button type="button" class="btn btn--block" id="resetDemo">Azzera i dati della demo</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- SCHEDA CAMPO -->
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+    <div class="sheet__backdrop" data-close></div>
+    <div class="sheet__panel">
+      <div class="sheet__grip" aria-hidden="true"></div>
+      <header class="sheet__head">
+        <div>
+          <h2 id="sheetTitle">Campo</h2>
+          <p class="muted small" id="sheetSub"></p>
+        </div>
+        <button type="button" class="btn btn--icon" data-close aria-label="Chiudi">✕</button>
+      </header>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="tab is-active" data-tab="now" aria-selected="true">Adesso</button>
+        <button type="button" role="tab" class="tab" data-tab="games" aria-selected="false">Partite</button>
+        <button type="button" role="tab" class="tab" data-tab="chat" aria-selected="false">Chat</button>
+        <button type="button" role="tab" class="tab" data-tab="info" aria-selected="false">Info</button>
+      </div>
+      <div class="sheet__body" id="sheetBody"></div>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="Navigazione principale">
+    <button type="button" class="tabbar__item is-active" data-view="map">Mappa</button>
+    <button type="button" class="tabbar__item" data-view="games">Partite</button>
+    <button type="button" class="tabbar__item" data-view="training">Allenamento</button>
+    <button type="button" class="tabbar__item" data-view="profile">Profilo</button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
