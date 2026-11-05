@@ -1,6 +1,6 @@
 // Impostazioni del prototipo: modifica qui zona e nome.
 window.CONFIG = {
-  appName: 'Campetti',            // nome provvisorio, da sostituire con il naming (par. 5.5)
+  appName: 'Check Camp',          // nome scelto dall'autore
   center: [45.5416, 10.2118],     // centro iniziale della mappa (Brescia)
   zoom: 14,
   // Server Overpass che legge i dati di OpenStreetMap

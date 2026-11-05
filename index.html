@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Campetti</title>
-  <meta name="description" content="Prototipo di tesi: trovare un campo da basket, vedere chi c'è e organizzare una partita spontanea.">
-  <meta name="theme-color" content="#111111">
+  <title>Check Camp</title>
+  <meta name="description" content="Prototipo di tesi: trova un campo da basket, guarda dove si sta giocando e unisciti a una partita.">
+  <meta name="theme-color" content="#f07c1b">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -16,24 +16,24 @@
 </head>
 <body>
   <div class="demo-banner" id="demoBanner">
-    Prototipo di tesi: i campi vengono da OpenStreetMap, presenze, partite e chat sono simulate.
+    Prototipo di tesi: i campi vengono da OpenStreetMap; partite, amici e chat sono simulati.
     <button type="button" class="link" id="closeBanner" aria-label="Chiudi avviso">Ok</button>
   </div>
 
   <main>
-    <!-- MAPPA -->
-    <section class="view view--map is-active" id="view-map" aria-label="Mappa dei campi">
+    <!-- HOME: MAPPA -->
+    <section class="view view--map is-active" id="view-home" aria-label="Mappa dei campi">
       <div id="map" role="application" aria-label="Mappa"></div>
-
       <div class="map-top">
-        <div class="chips" role="group" aria-label="Filtri">
-          <button type="button" class="chip" data-filter="lit" aria-pressed="false">Illuminato</button>
-          <button type="button" class="chip" data-filter="hard" aria-pressed="false">Asfalto o cemento</button>
-          <button type="button" class="chip" data-filter="public" aria-pressed="false">Accesso libero</button>
-          <button type="button" class="chip" data-filter="busy" aria-pressed="false">Si gioca ora</button>
-        </div>
+        <form class="search" id="searchForm" role="search">
+          <input type="search" id="searchInput" placeholder="Cerca il campo" aria-label="Cerca il campo" autocomplete="off">
+          <button type="submit" class="search__btn" aria-label="Cerca">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </button>
+        </form>
+        <div class="search-results" id="searchResults" hidden></div>
+        <p class="legend"><span class="lg lg--court"></span> campo <span class="lg lg--fav">★</span> preferito <span class="lg lg--game">2v2</span> partita</p>
       </div>
-
       <div class="map-actions">
         <button type="button" class="btn btn--light" id="searchArea">Cerca campi in quest'area</button>
         <button type="button" class="btn btn--icon btn--light" id="locate" aria-label="Vai alla mia posizione">
@@ -43,93 +43,102 @@
       <p class="map-status" id="mapStatus" role="status" aria-live="polite"></p>
     </section>
 
-    <!-- PARTITE -->
-    <section class="view" id="view-games" aria-label="Partite">
-      <header class="view-head"><h1>Partite vicine</h1></header>
-      <div class="list" id="gamesList"></div>
+    <!-- COMMUNITY: CHAT CON GLI AMICI -->
+    <section class="view" id="view-community" aria-label="Community">
+      <header class="view-head"><h1>Chat</h1></header>
+      <div id="chatList" class="list"></div>
+      <button type="button" class="btn btn--primary fab" id="newChat">+ Chat personale</button>
     </section>
 
-    <!-- ALLENAMENTO -->
-    <section class="view" id="view-training" aria-label="Allenamento">
-      <header class="view-head"><h1>Allenamento</h1></header>
-      <div class="card">
-        <h2>Tiri liberi</h2>
-        <p class="muted">Quanti ne hai segnati su 10? Il grafico mostra le ultime sessioni.</p>
-        <div class="stepper" role="group" aria-label="Tiri liberi segnati">
-          <button type="button" class="btn btn--icon" id="ftMinus" aria-label="Uno in meno">−</button>
-          <output id="ftValue">5</output><span class="muted">/ 10</span>
-          <button type="button" class="btn btn--icon" id="ftPlus" aria-label="Uno in più">+</button>
-        </div>
-        <button type="button" class="btn btn--primary btn--block" id="ftSave">Salva sessione</button>
-        <div class="bars" id="ftBars" aria-label="Ultime sessioni"></div>
-      </div>
-      <div class="card">
-        <h2>Esercizi</h2>
-        <ul class="drills">
-          <li><strong>Tiro</strong> · 5 posizioni intorno all'area, 10 tiri per posizione</li>
-          <li><strong>Palleggio</strong> · 2 minuti mano debole, 2 minuti crossover</li>
-          <li><strong>Passaggio</strong> · passaggi al muro, 3 serie da 30</li>
-          <li><strong>Ball handling</strong> · giri intorno a vita e gambe, 3 serie</li>
-        </ul>
-        <p class="muted small">Esercizi di esempio, da sostituire con i contenuti definitivi.</p>
-      </div>
+    <!-- TRAIN: ALLENAMENTO -->
+    <section class="view" id="view-train" aria-label="Allenamento">
+      <header class="view-head"><h1>Allenamento</h1><p class="muted small">Le tue statistiche le vedi solo tu.</p></header>
+      <div id="trainBody"></div>
     </section>
 
     <!-- PROFILO -->
-    <section class="view" id="view-profile" aria-label="Profilo">
-      <header class="view-head"><h1>Profilo</h1></header>
+    <section class="view view--profile" id="view-profile" aria-label="Profilo">
+      <div class="profile-head">
+        <button type="button" class="avatar avatar--xl" id="avatarBtn" aria-label="Cambia avatar"><span id="avatarTxt">?</span><span class="avatar__plus">+</span></button>
+        <p class="user-id" id="userId">USER</p>
+      </div>
       <form class="card" id="profileForm">
         <label class="field">Nickname
-          <input type="text" id="nickname" maxlength="24" autocomplete="nickname" placeholder="Come ti chiamano al campo">
-        </label>
-        <label class="field">Posizione preferita
-          <select id="position">
-            <option value="">Nessuna preferenza</option>
-            <option>Playmaker</option>
-            <option>Guardia</option>
-            <option>Ala</option>
-            <option>Centro</option>
-          </select>
+          <input type="text" id="nickname" maxlength="20" autocomplete="nickname" placeholder="Il nome con cui ti trovano gli amici">
         </label>
         <button type="submit" class="btn btn--primary btn--block">Salva</button>
-        <p class="muted small">Nessun livello e nessuna valutazione: ci si riconosce giocando.</p>
+        <p class="muted small">Gli amici ti trovano con il tuo nickname: dallo a chi vuoi, anche al campetto. Nessun livello e nessuna valutazione.</p>
       </form>
       <div class="card">
-        <h2>Le tue partite</h2>
-        <div id="history"></div>
+        <h2>Richieste di amicizia</h2>
+        <div id="requests"></div>
+        <form class="inline-form" id="addFriendForm">
+          <input type="text" id="friendNick" placeholder="Nickname di un amico" aria-label="Nickname di un amico" autocomplete="off">
+          <button type="submit" class="btn btn--primary">Aggiungi</button>
+        </form>
+        <p class="muted small">Prova con un nickname della demo, per esempio «Ale», «Giuly» o «Teo».</p>
       </div>
-      <div class="card">
-        <button type="button" class="btn btn--block" id="resetDemo">Azzera i dati della demo</button>
+      <div class="card"><h2>Amici</h2><div id="friendsList"></div></div>
+      <div class="card"><h2>Campi preferiti</h2><div id="favList"></div>
+        <label class="check"><input type="checkbox" id="notifyFavs"> Avvisami quando parte una partita in un mio campo preferito</label>
       </div>
+      <div class="card"><h2>Storico partite</h2><div id="history"></div></div>
+      <div class="card"><button type="button" class="btn btn--block" id="resetDemo">Azzera i dati della demo</button></div>
     </section>
   </main>
 
-  <!-- SCHEDA CAMPO -->
+  <!-- SCHEDA (campo, partita, chat, allenamento): pannello dal basso -->
   <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
     <div class="sheet__backdrop" data-close></div>
-    <div class="sheet__panel">
+    <div class="sheet__panel" id="sheetPanel">
       <div class="sheet__grip" aria-hidden="true"></div>
       <header class="sheet__head">
         <div>
           <h2 id="sheetTitle">Campo</h2>
-          <p class="muted small" id="sheetSub"></p>
+          <p class="small" id="sheetSub"></p>
         </div>
-        <button type="button" class="btn btn--icon" data-close aria-label="Chiudi">✕</button>
+        <div class="head-actions">
+          <button type="button" class="btn btn--icon fav-btn" id="favBtn" aria-pressed="false" aria-label="Aggiungi ai preferiti" hidden>☆</button>
+          <button type="button" class="btn btn--icon" data-close aria-label="Chiudi">✕</button>
+        </div>
       </header>
-      <div class="tabs" role="tablist">
-        <button type="button" role="tab" class="tab is-active" data-tab="now" aria-selected="true">Adesso</button>
-        <button type="button" role="tab" class="tab" data-tab="games" aria-selected="false">Partite</button>
-        <button type="button" role="tab" class="tab" data-tab="chat" aria-selected="false">Chat</button>
-        <button type="button" role="tab" class="tab" data-tab="info" aria-selected="false">Info</button>
-      </div>
       <div class="sheet__body" id="sheetBody"></div>
     </div>
   </div>
 
+  <!-- AVVISO (notifica simulata) -->
+  <div class="notice" id="notice" role="status" aria-live="polite" hidden>
+    <strong id="noticeTitle"></strong>
+    <div id="noticeBody" class="small"></div>
+    <div class="btn-row">
+      <button type="button" class="btn btn--primary" id="noticeOpen">Apri</button>
+      <button type="button" class="btn" id="noticeClose">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- CONDIVISIONE -->
+  <div class="modal" id="shareModal" role="dialog" aria-modal="true" aria-labelledby="shareTitle" hidden>
+    <div class="sheet__backdrop" data-close-share></div>
+    <div class="modal__panel">
+      <header class="sheet__head">
+        <h2 id="shareTitle">Condividi</h2>
+        <button type="button" class="btn btn--icon" data-close-share aria-label="Chiudi">✕</button>
+      </header>
+      <canvas id="shareCanvas" width="1080" height="1920" aria-label="Anteprima dell'immagine da condividere"></canvas>
+      <label class="check" id="shareCourtRow"><input type="checkbox" id="shareCourt"> Mostra il nome del campo</label>
+      <p class="muted small">L'immagine non contiene i nomi degli altri giocatori.</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn--primary" id="shareGo">Condividi</button>
+        <button type="button" class="btn" id="shareSave">Scarica</button>
+      </div>
+      <p class="muted small">Dal telefono, «Condividi» apre WhatsApp, Instagram e le altre app.</p>
+    </div>
+  </div>
+
   <nav class="tabbar" aria-label="Navigazione principale">
-    <button type="button" class="tabbar__item is-active" data-view="map">Mappa</button>
-    <button type="button" class="tabbar__item" data-view="games">Partite</button>
-    <button type="button" class="tabbar__item" data-view="training">Allenamento</button>
+    <button type="button" class="tabbar__item is-active" data-view="home">Home</button>
+    <button type="button" class="tabbar__item" data-view="community">Community</button>
+    <button type="button" class="tabbar__item" data-view="train">Train</button>
     <button type="button" class="tabbar__item" data-view="profile">Profilo</button>
   </nav>
 
