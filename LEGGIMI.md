@@ -35,7 +35,7 @@ Nella tesi va scritto così: il prototipo usa dati reali per i campi e dati simu
 
 ```
 index.html            struttura delle schermate
-css/style.css         stile neutro da prototipo (colori e caratteri in cima al file, nelle variabili :root)
+css/style.css         stile del prototipo: il rosso del logo e le sue tonalità (variabili :root in cima al file)
 js/config.js          zona iniziale della mappa, nome, durata delle segnalazioni
 js/app.js             logica dell'app
 manifest.webmanifest  nome, icone e colori dell'app installata

@@ -1,6 +1,6 @@
 // Service worker: tiene in memoria l'interfaccia, così l'app si apre anche con rete debole.
 // Mappa e campi richiedono comunque la connessione.
-const CACHE = 'checkcamp-v5';
+const CACHE = 'checkcamp-v8';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/config.js', 'js/app.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png',
@@ -18,8 +18,10 @@ self.addEventListener('fetch', e => {
   // Dati dei campi e riquadri della mappa: sempre dalla rete
   if (e.request.method !== 'GET' || url.hostname.includes('overpass') || url.hostname.includes('tile.openstreetmap.org')) return;
   // Interfaccia: prima la rete (per vedere subito le modifiche), poi la copia salvata
+  // per i file dell'app chiede sempre al server se ci sono versioni nuove (niente copia vecchia del browser)
+  const net = url.origin === location.origin ? fetch(url.href, { cache: 'no-cache' }) : fetch(e.request);
   e.respondWith(
-    fetch(e.request).then(res => {
+    net.then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
       return res;

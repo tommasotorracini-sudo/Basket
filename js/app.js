@@ -15,7 +15,7 @@
     set(k, v) { try { localStorage.setItem('checkcamp:' + k, JSON.stringify(v)); } catch (e) { /* niente */ } },
     clear() { try { Object.keys(localStorage).filter(k => k.startsWith('checkcamp:')).forEach(k => localStorage.removeItem(k)); } catch (e) { /* niente */ } }
   };
-  const AVATAR_COLORS = ['#f07c1b', '#e2402f', '#3d8fd6', '#2e7d32', '#8e44ad', '#f2b705'];
+  const AVATAR_COLORS = ['#ff0d19', '#ff6b72', '#ffb3b6', '#ffd6d8'];   // tonalità del rosso, tutte con testo scuro leggibile
   const state = {
     courts: [], byId: {},
     profile: store.get('profile', null) || { nickname: '', color: 0, userId: 'USER' + (100 + Math.floor(Math.random() * 900)) },
@@ -267,7 +267,7 @@
     const it = shareItem; if (!it) return;
     const cv = $('#shareCanvas'), g = cv.getContext('2d'), W = 1080, H = 1920;
     const F = (w, s) => `${w} ${s}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
-    g.fillStyle = '#f07c1b'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#ff0d19'; g.fillRect(0, 0, W, H);
     g.strokeStyle = 'rgba(22,22,22,.18)'; g.lineWidth = 8;
     g.beginPath(); g.arc(W / 2, H + 140, 620, 0, Math.PI * 2); g.stroke();
     g.beginPath(); g.arc(W / 2, H + 140, 260, 0, Math.PI * 2); g.stroke();
@@ -287,8 +287,8 @@
       const last = list.slice(-6), max = Math.max(10, ...last.map(s => s.att)), bw = 120;
       last.forEach((s, i) => {
         const x = 90 + i * (bw + 30), hA = 500 * s.att / max, hM = 500 * s.made / max, y0 = 1550;
-        g.fillStyle = '#e2402f'; g.fillRect(x, y0 - hA, bw, hA);
-        g.fillStyle = '#3d8fd6'; g.fillRect(x, y0 - hM, bw, hM);
+        g.fillStyle = '#ffd6d8'; g.fillRect(x, y0 - hA, bw, hA);
+        g.fillStyle = '#161616'; g.fillRect(x, y0 - hM, bw, hM);
       });
     }
     g.fillStyle = '#161616'; g.font = F('500', 40); g.fillText('Trova un campo, guarda chi c\'è, entra in partita.', 90, 1820);
@@ -421,7 +421,7 @@
     return `
       <p class="sec-title">PARTITE</p>
       ${games.length ? games.map(g => gameCard(g, true)).join('') : '<p class="muted small" style="margin:0">Nessuna partita in questo momento. Se sei al campo, creane una: è così che gli altri sanno che qui si gioca.</p>'}
-      <button type="button" class="btn btn--orange btn--block" data-act="create">⊕ Crea partita</button>
+      <button type="button" class="btn btn--accent btn--block" data-act="create">⊕ Crea partita</button>
       <p class="sec-title">INFO</p>
       <dl class="info">${row('Pavimentazione', c.surface)}${row('Illuminazione', c.lit == null ? null : c.lit ? 'sì' : 'no')}${row('Canestri', c.hoops)}${row('Accesso', c.access)}</dl>
       <p class="sec-title">FOTO</p>
@@ -516,7 +516,7 @@
     return Object.keys(cat.drills).map(d => `<div class="drill">
       <div class="drill__head"><h3>${DRILLS[d]}</h3><span class="avg">Media ${avg(state.train[d])}</span><button type="button" class="btn" data-adddrill="${d}">Aggiungi</button></div>
       ${chartHtml(state.train[d])}
-      <p class="small muted" style="margin:0"><span style="color:var(--blue)">■</span> ${esc(cat.fatti)} &nbsp;<span style="color:var(--red)">■</span> ${esc(cat.tentati)}</p>
+      <p class="small muted" style="margin:0"><span style="color:var(--red-dark)">■</span> ${esc(cat.fatti)} &nbsp;<span style="color:var(--red-light)">■</span> ${esc(cat.tentati)}</p>
       ${state.train[d].length ? `<div class="btn-row"><button type="button" class="btn" data-sharetrain="${d}">Condividi</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`${DRILLS[d]}: media ${avg(state.train[d])} su ${state.train[d].length} sessioni (${C.appName})`)}">WhatsApp</a></div>` : ''}
     </div>`).join('');
   }
@@ -702,5 +702,10 @@
   bind(); refresh(); initMap();
   setInterval(() => { pruneGames(); favWatch(); refresh(); }, MIN);
   setTimeout(favWatch, 4000);
-  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
+    // quando arriva una versione nuova dell'app, la pagina si ricarica da sola una volta
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+  }
 })();
