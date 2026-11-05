@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Check Camp</title>
+  <meta name="description" content="Prototipo di tesi: trova un campo da basket, guarda dove si sta giocando e unisciti a una partita.">
+  <meta name="theme-color" content="#f07c1b">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="demo-banner" id="demoBanner">
+    Prototipo di tesi: i campi vengono da OpenStreetMap; partite, amici e chat sono simulati.
+    <button type="button" class="link" id="closeBanner" aria-label="Chiudi avviso">Ok</button>
+  </div>
+
+  <main>
+    <!-- HOME: MAPPA -->
+    <section class="view view--map is-active" id="view-home" aria-label="Mappa dei campi">
+      <div id="map" role="application" aria-label="Mappa"></div>
+      <div class="map-top">
+        <form class="search" id="searchForm" role="search">
+          <input type="search" id="searchInput" placeholder="Cerca il campo" aria-label="Cerca il campo" autocomplete="off">
+          <button type="submit" class="search__btn" aria-label="Cerca">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </button>
+        </form>
+        <div class="search-results" id="searchResults" hidden></div>
+        <p class="legend"><span class="lg lg--court"></span> campo <span class="lg lg--fav">★</span> preferito <span class="lg lg--game">2v2</span> partita</p>
+      </div>
+      <div class="map-actions">
+        <button type="button" class="btn btn--light" id="searchArea">Cerca campi in quest'area</button>
+        <button type="button" class="btn btn--icon btn--light" id="locate" aria-label="Vai alla mia posizione">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <p class="map-status" id="mapStatus" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- COMMUNITY: CHAT CON GLI AMICI -->
+    <section class="view" id="view-community" aria-label="Community">
+      <header class="view-head"><h1>Chat</h1></header>
+      <div id="chatList" class="list"></div>
+      <button type="button" class="btn btn--primary fab" id="newChat">+ Chat personale</button>
+    </section>
+
+    <!-- TRAIN: ALLENAMENTO -->
+    <section class="view" id="view-train" aria-label="Allenamento">
+      <header class="view-head"><h1>Allenamento</h1><p class="muted small">Le tue statistiche le vedi solo tu.</p></header>
+      <div id="trainBody"></div>
+    </section>
+
+    <!-- PROFILO -->
+    <section class="view view--profile" id="view-profile" aria-label="Profilo">
+      <div class="profile-head">
+        <button type="button" class="avatar avatar--xl" id="avatarBtn" aria-label="Scegli una foto profilo"><span id="avatarTxt">?</span><span class="avatar__plus">+</span></button>
+        <input type="file" id="avatarFile" accept="image/*" hidden>
+        <p class="user-id" id="userId">USER</p>
+        <button type="button" class="link small" id="removePhoto" hidden>Togli la foto</button>
+      </div>
+      <form class="card" id="profileForm">
+        <label class="field">Nickname
+          <input type="text" id="nickname" maxlength="20" autocomplete="nickname" placeholder="Il nome con cui ti trovano gli amici">
+        </label>
+        <button type="submit" class="btn btn--primary btn--block">Salva</button>
+        <p class="muted small">Gli amici ti trovano con il tuo nickname: dallo a chi vuoi, anche al campetto. Nessun livello e nessuna valutazione.</p>
+      </form>
+      <div class="card">
+        <h2>Richieste di amicizia</h2>
+        <div id="requests"></div>
+        <form class="inline-form" id="addFriendForm">
+          <input type="text" id="friendNick" placeholder="Nickname di un amico" aria-label="Nickname di un amico" autocomplete="off">
+          <button type="submit" class="btn btn--primary">Aggiungi</button>
+        </form>
+        <p class="muted small">Prova con un nickname della demo, per esempio «Ale», «Giuly» o «Teo».</p>
+      </div>
+      <div class="card"><h2>Amici</h2><div id="friendsList"></div></div>
+      <div class="card"><h2>Campi preferiti</h2><div id="favList"></div>
+        <label class="check"><input type="checkbox" id="notifyFavs"> Avvisami quando parte una partita in un mio campo preferito</label>
+      </div>
+      <div class="card"><h2>Storico partite</h2><div id="history"></div></div>
+      <div class="card"><button type="button" class="btn btn--block" id="resetDemo">Azzera i dati della demo</button></div>
+    </section>
+  </main>
+
+  <!-- SCHEDA (campo, partita, chat, allenamento): pannello dal basso -->
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+    <div class="sheet__backdrop" data-close></div>
+    <div class="sheet__panel" id="sheetPanel">
+      <div class="sheet__grip" aria-hidden="true"></div>
+      <header class="sheet__head">
+        <div>
+          <h2 id="sheetTitle">Campo</h2>
+          <p class="small" id="sheetSub"></p>
+        </div>
+        <div class="head-actions">
+          <button type="button" class="btn btn--icon fav-btn" id="favBtn" aria-pressed="false" aria-label="Aggiungi ai preferiti" hidden>☆</button>
+          <button type="button" class="btn btn--icon" data-close aria-label="Chiudi">✕</button>
+        </div>
+      </header>
+      <div class="sheet__body" id="sheetBody"></div>
+    </div>
+  </div>
+
+  <!-- AVVISO (notifica simulata) -->
+  <div class="notice" id="notice" role="status" aria-live="polite" hidden>
+    <strong id="noticeTitle"></strong>
+    <div id="noticeBody" class="small"></div>
+    <div class="btn-row">
+      <button type="button" class="btn btn--primary" id="noticeOpen">Apri</button>
+      <button type="button" class="btn" id="noticeClose">Chiudi</button>
+    </div>
+  </div>
+
+  <!-- CONDIVISIONE -->
+  <div class="modal" id="shareModal" role="dialog" aria-modal="true" aria-labelledby="shareTitle" hidden>
+    <div class="sheet__backdrop" data-close-share></div>
+    <div class="modal__panel">
+      <header class="sheet__head">
+        <h2 id="shareTitle">Condividi</h2>
+        <button type="button" class="btn btn--icon" data-close-share aria-label="Chiudi">✕</button>
+      </header>
+      <canvas id="shareCanvas" width="1080" height="1920" aria-label="Anteprima dell'immagine da condividere"></canvas>
+      <label class="check" id="shareCourtRow"><input type="checkbox" id="shareCourt"> Mostra il nome del campo</label>
+      <p class="muted small">L'immagine non contiene i nomi degli altri giocatori.</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn--primary" id="shareGo">Condividi</button>
+        <button type="button" class="btn" id="shareSave">Scarica</button>
+      </div>
+      <p class="muted small">Dal telefono, «Condividi» apre WhatsApp, Instagram e le altre app.</p>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="Navigazione principale">
+    <button type="button" class="tabbar__item is-active" data-view="home">Home</button>
+    <button type="button" class="tabbar__item" data-view="community">Community</button>
+    <button type="button" class="tabbar__item" data-view="train">Train</button>
+    <button type="button" class="tabbar__item" data-view="profile">Profilo</button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
