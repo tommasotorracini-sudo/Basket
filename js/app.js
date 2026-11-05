@@ -253,7 +253,11 @@
   }
 
   /* ---------- allenamento: solo personale ---------- */
-  const DRILLS = { liberi: 'Tiri liberi', triple: 'Triple' };
+  const CATS = C.train, DRILLS = {}, CAT_OF = {};
+  CATS.forEach(c => Object.entries(c.drills).forEach(([k, v]) => { DRILLS[k] = v; CAT_OF[k] = c; }));
+  Object.keys(DRILLS).forEach(k => { if (!state.train[k]) state.train[k] = []; });
+  const catById = id => CATS.find(c => c.id === id) || CATS[0];
+  const catTotals = c => Object.keys(c.drills).reduce((a, k) => a.concat(state.train[k]), []);
   function avg(list) { const m = list.reduce((a, s) => a + s.made, 0), t = list.reduce((a, s) => a + s.att, 0); return t ? Math.round(m / t * 100) + '%' : '—'; }
 
   /* ---------- condivisione (immagine per storie e chat) ---------- */
@@ -277,7 +281,7 @@
       if ($('#shareCourt').checked) { g.font = F('800', 60); g.fillText(it.courtName.slice(0, 28), 90, 1200); }
     } else {
       const list = state.train[it.drill];
-      g.font = F('600', 54); g.fillText('Allenamento · ' + DRILLS[it.drill], 90, 520);
+      g.font = F('600', 54); g.fillText((CAT_OF[it.drill].name === DRILLS[it.drill] ? 'Allenamento' : 'Allenamento · ' + CAT_OF[it.drill].name) + ' · ' + DRILLS[it.drill], 90, 520);
       g.font = F('900', 260); g.fillText(avg(list), 80, 800);
       g.font = F('500', 60); g.fillText('media su ' + list.length + (list.length === 1 ? ' sessione' : ' sessioni'), 90, 900);
       const last = list.slice(-6), max = Math.max(10, ...last.map(s => s.att)), bw = 120;
@@ -388,7 +392,7 @@
     } else if (s.type === 'pickGame') {
       title = 'Manda una partita'; sub = 'a ' + s.id; body = tplPickGame(s.id);
     } else if (s.type === 'train') {
-      title = 'Tiro'; sub = 'Visibile solo a te'; body = tplTrain(s.adding);
+      const cat = s.adding ? CAT_OF[s.adding] : catById(s.cat); title = cat.name; sub = 'Visibile solo a te'; body = tplTrain(s.adding, cat);
     }
     $('#sheetTitle').textContent = title; $('#sheetSub').textContent = sub;
     const b = $('#sheetBody'); b.innerHTML = body;
@@ -497,22 +501,22 @@
     return `<div class="chart">${last.map(s => `<div class="col"><div class="att" style="height:${s.att / max * 100}%"><span class="lbl-top">${s.att}</span><div class="made" style="height:${s.att ? s.made / s.att * 100 : 0}%"><div class="lbl-in">${s.made}</div></div></div></div>`).join('')}</div>
       <div class="chart-x">${last.map(s => `<span>${new Date(s.ts).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}</span>`).join('')}</div>`;
   }
-  function tplTrain(adding) {
+  function tplTrain(adding, cat) {
     if (adding) {
       return `<div class="adder" id="adder" data-drill="${adding}">
         <h2>${DRILLS[adding]}</h2>
-        <div class="adder__nums"><input type="number" id="addMade" min="0" max="200" value="5" aria-label="Canestri fatti"> / <input type="number" id="addAtt" min="1" max="200" value="10" aria-label="Tiri tentati"></div>
+        <div class="adder__nums"><input type="number" id="addMade" min="0" max="200" value="5" aria-label="${esc(cat.fatti)}"> / <input type="number" id="addAtt" min="1" max="200" value="10" aria-label="${esc(cat.tentati)}"></div>
         <div class="adder__ctrl"><div><button type="button" class="btn" data-step="made" data-d="-1" aria-label="Uno fatto in meno">−</button><button type="button" class="btn" data-step="made" data-d="1" aria-label="Uno fatto in più">+</button></div>
         <div><button type="button" class="btn" data-step="att" data-d="-1" aria-label="Un tentativo in meno">−</button><button type="button" class="btn" data-step="att" data-d="1" aria-label="Un tentativo in più">+</button></div></div>
-        <p class="small" style="margin:0">canestri fatti / tiri tentati</p>
+        <p class="small" style="margin:0">${esc(cat.fatti)} / ${esc(cat.tentati)}</p>
         <button type="button" class="btn btn--primary btn--block" data-act="saveDrill">Aggiungi</button>
         <button type="button" class="btn btn--block" data-act="backTrain">Annulla</button>
       </div>`;
     }
-    return Object.keys(DRILLS).map(d => `<div class="drill">
+    return Object.keys(cat.drills).map(d => `<div class="drill">
       <div class="drill__head"><h3>${DRILLS[d]}</h3><span class="avg">Media ${avg(state.train[d])}</span><button type="button" class="btn" data-adddrill="${d}">Aggiungi</button></div>
       ${chartHtml(state.train[d])}
-      <p class="small muted" style="margin:0"><span style="color:var(--blue)">■</span> canestri fatti &nbsp;<span style="color:var(--red)">■</span> tiri tentati</p>
+      <p class="small muted" style="margin:0"><span style="color:var(--blue)">■</span> ${esc(cat.fatti)} &nbsp;<span style="color:var(--red)">■</span> ${esc(cat.tentati)}</p>
       ${state.train[d].length ? `<div class="btn-row"><button type="button" class="btn" data-sharetrain="${d}">Condividi</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`${DRILLS[d]}: media ${avg(state.train[d])} su ${state.train[d].length} sessioni (${C.appName})`)}">WhatsApp</a></div>` : ''}
     </div>`).join('');
   }
@@ -526,14 +530,15 @@
   }
   function renderTrainView() {
     $('#trainBody').innerHTML = `
-      <button type="button" class="cat" data-act="openTiro">Tiro<small>Tiri liberi e triple · media ${avg(state.train.liberi.concat(state.train.triple))}</small></button>
-      ${['Palleggio', 'Dribbling', 'Stoppatore'].map(n => `<button type="button" class="cat" disabled>${n}<small>Esercizi da definire</small></button>`).join('')}
-      <p class="muted small">Le categorie oltre al tiro sono provvisorie: gli esercizi e il modo di misurarli vanno definiti con un allenatore.</p>`;
+      ${CATS.map(c => `<button type="button" class="cat" data-act="openCat" data-cat="${c.id}">${esc(c.name)}<small>${Object.values(c.drills).length > 1 ? Object.values(c.drills).join(' e ').toLowerCase() + ' · ' : ''}media ${avg(catTotals(c))}</small></button>`).join('')}
+      <p class="muted small">Scrivi tu quanti ne hai fatti e quanti ne hai tentati: sono statistiche tue, non le vede nessun altro.</p>`;
   }
   function renderProfile() {
     const p = state.profile;
-    $('#avatarBtn').style.background = AVATAR_COLORS[p.color % AVATAR_COLORS.length];
-    $('#avatarTxt').textContent = (p.nickname.trim() || '?')[0].toUpperCase();
+    $('#avatarBtn').style.background = p.photo ? `center / cover no-repeat url("${p.photo}")` : AVATAR_COLORS[p.color % AVATAR_COLORS.length];
+    $('#avatarTxt').textContent = p.photo ? '' : (p.nickname.trim() || '?')[0].toUpperCase();
+    $('#avatarBtn').setAttribute('aria-label', p.photo ? 'Cambia foto profilo' : 'Scegli una foto profilo');
+    $('#removePhoto').hidden = !p.photo;
     $('#userId').textContent = p.nickname.trim() || p.userId;
     $('#requests').innerHTML = (state.requests.length ? `<p class="small" style="margin:0"><span class="req-badge">${state.requests.length}</span> ${state.requests.length === 1 ? 'nuova richiesta' : 'nuove richieste'}</p>` +
       state.requests.map(n => `<div class="row-item"><strong>${esc(n)}</strong><span class="btn-row" style="flex:0"><button type="button" class="btn btn--primary" data-accept="${esc(n)}">Accetta</button><button type="button" class="btn" data-decline="${esc(n)}">Rifiuta</button></span></div>`).join('')
@@ -607,11 +612,12 @@
         const a = el.dataset.act, s = state.sheet;
         if (a === 'create') openSheet('create', s.id);
         if (a === 'back') openSheet('court', s.id);
-        if (a === 'openTiro' || a === 'backTrain') openSheet('train', null);
+        if (a === 'openCat') openSheet('train', null, { cat: el.dataset.cat });
+        if (a === 'backTrain') openSheet('train', null, { cat: CAT_OF[$('#adder').dataset.drill].id });
         if (a === 'saveDrill') {
           const d = $('#adder').dataset.drill, made = Number($('#addMade').value), att = Number($('#addAtt').value);
-          if (!(att >= 1) || !(made >= 0) || made > att) { toast('I canestri fatti non possono superare i tiri tentati'); return; }
-          state.train[d].push({ made, att, ts: Date.now() }); save('train'); toast('Sessione salvata'); openSheet('train', null); refresh();
+          if (!(att >= 1) || !(made >= 0) || made > att) { toast('I ' + CAT_OF[d].fatti + ' non possono superare i ' + CAT_OF[d].tentati); return; }
+          state.train[d].push({ made, att, ts: Date.now() }); save('train'); toast('Sessione salvata'); openSheet('train', null, { cat: CAT_OF[d].id }); refresh();
         }
       }
     });
@@ -662,7 +668,21 @@
       save('games'); toast('Profilo salvato'); refresh();
     });
     $('#nickname').value = state.profile.nickname;
-    $('#avatarBtn').addEventListener('click', () => { state.profile.color = (state.profile.color + 1) % AVATAR_COLORS.length; save('profile'); renderProfile(); });
+    $('#avatarBtn').addEventListener('click', () => $('#avatarFile').click());
+    $('#avatarFile').addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0]; e.target.value = '';
+      if (!file || !file.type.startsWith('image/')) return;
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {                          // ritaglio quadrato al centro, 256 px: resta leggera
+        const side = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas'); cv.width = cv.height = 256;
+        cv.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+        URL.revokeObjectURL(url);
+        state.profile.photo = cv.toDataURL('image/jpeg', 0.85); save('profile'); renderProfile(); toast('Foto profilo aggiornata');
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast('Non riesco ad aprire questa immagine'); };
+      img.src = url;
+    });
+    $('#removePhoto').addEventListener('click', () => { delete state.profile.photo; save('profile'); renderProfile(); });
     $('#addFriendForm').addEventListener('submit', e => { e.preventDefault(); addFriendByNick($('#friendNick').value); $('#friendNick').value = ''; });
     $('#notifyFavs').addEventListener('change', e => {
       state.prefs.notifyFavs = e.target.checked; save('prefs');

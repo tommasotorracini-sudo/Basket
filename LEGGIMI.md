@@ -18,11 +18,11 @@ Il nome dell'app («Check Camp») si cambia in `js/config.js` e in `manifest.web
 | Partita completata | resta sulla mappa come «in corso» per 60 minuti dall'inizio |
 | Partite degli altri sulla mappa | **simulate** (circa un campo su tre, dalle 8 alle 22) |
 | Chat della partita | temporanea: la vedono solo gli iscritti e sparisce con la partita; risposte **simulate** |
+| Foto profilo (scelta dalla galleria, ritagliata quadrata) | salvata solo sul telefono |
 | Amici: aggiunti scambiandosi il nickname, richieste da accettare | salvati solo sul telefono; le risposte degli altri sono **simulate** |
 | Chat con gli amici | permanente, nasce quando l'amicizia è accettata; si può mandare una partita in chat |
 | Stato degli amici («al campo», «iscritto a una partita») | **simulato**; non esiste online/offline |
-| Allenamento: Tiro (tiri liberi, triple), canestri fatti su tiri tentati, media | salvato solo sul telefono, visibile solo a te |
-| Allenamento: Palleggio, Dribbling, Stoppatore | **da definire** (non attivi) |
+| Allenamento: Tiro (tiri liberi, triple), Palleggio, Dribbling, Stoppatore; riusciti su tentati, media | salvato solo sul telefono, visibile solo a te; i numeri li inserisce l'utente. Categorie, esercizi e parole si cambiano in `js/config.js` |
 | Condivisione dell'allenamento (immagine, WhatsApp) | vera: l'immagine viene creata sul telefono |
 | Campi preferiti e avviso quando parte una partita | preferiti veri; la partita che fa scattare l'avviso è **simulata** |
 | Segnalazioni sullo stato del campo, con conferme | **simulate**; quelle che aggiungi restano sul telefono |

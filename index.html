@@ -59,8 +59,10 @@
     <!-- PROFILO -->
     <section class="view view--profile" id="view-profile" aria-label="Profilo">
       <div class="profile-head">
-        <button type="button" class="avatar avatar--xl" id="avatarBtn" aria-label="Cambia avatar"><span id="avatarTxt">?</span><span class="avatar__plus">+</span></button>
+        <button type="button" class="avatar avatar--xl" id="avatarBtn" aria-label="Scegli una foto profilo"><span id="avatarTxt">?</span><span class="avatar__plus">+</span></button>
+        <input type="file" id="avatarFile" accept="image/*" hidden>
         <p class="user-id" id="userId">USER</p>
+        <button type="button" class="link small" id="removePhoto" hidden>Togli la foto</button>
       </div>
       <form class="card" id="profileForm">
         <label class="field">Nickname

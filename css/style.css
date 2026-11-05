@@ -213,3 +213,15 @@ dl.info dd { margin: 0; font-weight: 700; text-align: right; }
   main, .tabbar, .demo-banner, .sheet, .toast, .notice, .modal { left: 50%; right: auto; width: 430px; transform: translateX(-50%); }
   .sheet__panel { left: 0; right: 0; }
 }
+
+/* contenuto dentro le schede bianche: niente che esca dal bordo */
+.card { grid-template-columns: minmax(0, 1fr); }
+.card > * { min-width: 0; }
+.row-item > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.row-item .btn-row { flex: 0 0 auto !important; }
+.row-item .btn { padding: 8px 10px; }
+.inline-form .btn { flex: 0 0 auto; }
+.view--profile { overflow-x: hidden; }
+.avatar--xl { overflow: visible; }
+
+[hidden] { display: none !important; }
