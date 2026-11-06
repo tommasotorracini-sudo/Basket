@@ -9,6 +9,8 @@ Il nome dell'app («Check Camp») si cambia in `js/config.js` e in `manifest.web
 |---|---|
 | Mappa | vera (OpenStreetMap) |
 | Campi da basket e loro caratteristiche (pavimentazione, luci, canestri, accesso) | **veri**, letti da OpenStreetMap tramite Overpass |
+| Campi inseriti a mano (via Balestrieri, Rhino skatepark, Campo Pista), visitati dall'autore | in `js/config.js` → `extraCourts`; la posizione si ricava dall'indirizzo |
+| Info mancanti in OpenStreetMap (pavimentazione, luci, canestri, accesso) | **valori di esempio** uguali per tutti (`exampleInfo` in `js/config.js`), per mostrare la funzione |
 | Ricerca del campo per nome | vera, sui campi già caricati sulla mappa |
 | La tua posizione | vera, solo se la autorizzi; non viene inviata a nessuno |
 | Dimensione dell'icona del campo (quanto è frequentato) | **simulata** |

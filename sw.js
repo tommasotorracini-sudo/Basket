@@ -1,6 +1,6 @@
 // Service worker: tiene in memoria l'interfaccia, così l'app si apre anche con rete debole.
 // Mappa e campi richiedono comunque la connessione.
-const CACHE = 'checkcamp-v11';
+const CACHE = 'checkcamp-v13';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/config.js', 'js/app.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png',

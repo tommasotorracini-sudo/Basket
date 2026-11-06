@@ -66,6 +66,46 @@
       lit: t.lit === 'yes' ? true : t.lit === 'no' ? false : null, hoops: t.hoops || null,
       access: t.access ? (ACCESS[t.access] || t.access) : null };
   }
+  /* completa le info mancanti con i valori di esempio (config.js → exampleInfo) */
+  function fillExample(c) {
+    const ex = C.exampleInfo || {}; c.example = [];
+    ['surface', 'lit', 'hoops', 'access'].forEach(k => { if (c[k] == null && ex[k] != null) { c[k] = ex[k]; c.example.push(k); } });
+    return c;
+  }
+  /* campi inseriti a mano dall'autore (config.js → extraCourts) */
+  const distM = (a, b) => { const k = Math.PI / 180, x = (b.lon - a.lon) * k * Math.cos((a.lat + b.lat) / 2 * k), y = (b.lat - a.lat) * k; return Math.sqrt(x * x + y * y) * 6371000; };
+  function mergeExtras() {
+    const geo = store.get('geo', {});
+    (C.extraCourts || []).forEach(x => {
+      const pos = x.lat != null ? { lat: x.lat, lon: x.lon } : geo[x.id];
+      if (!pos) return;
+      const data = { name: x.name, street: x.address, manual: true };
+      const near = state.courts.find(c => !c.extra && distM(c, pos) < 150);
+      if (near) {
+        Object.assign(near, data);                     // il campo di OpenStreetMap prende nome e indirizzo
+        const i = state.courts.findIndex(c => c.id === x.id);
+        if (i >= 0) { state.courts.splice(i, 1); delete state.byId[x.id]; }
+      } else if (!state.byId[x.id]) {
+        const c = fillExample(Object.assign({ id: x.id, lat: pos.lat, lon: pos.lon, extra: true, surface: null, lit: null, hoops: null, access: null }, data));
+        state.byId[c.id] = c; state.courts.push(c);
+      }
+    });
+  }
+  async function geocodeExtras() {
+    const geo = store.get('geo', {});
+    let changed = false;
+    for (const x of (C.extraCourts || [])) {
+      if (x.lat != null || (geo[x.id] && geo[x.id].q === x.address)) continue;
+      try {
+        const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&q=' + encodeURIComponent(x.search || x.address));
+        const j = await r.json();
+        if (j[0]) { geo[x.id] = { lat: +j[0].lat, lon: +j[0].lon, q: x.address }; changed = true; }
+      } catch (e) { /* senza rete: riprova alla prossima apertura */ }
+      await new Promise(ok => setTimeout(ok, 1100));          // al massimo una richiesta al secondo
+    }
+    if (changed) store.set('geo', geo);
+    mergeExtras(); refresh();
+  }
   /* frequentazione abituale simulata: 0 = poco, 1 = media, 2 = molto (segnaposto più grande) */
   const popularity = c => hash(c.id + 'pop') % 3;
 
@@ -313,6 +353,7 @@
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">contributori di OpenStreetMap</a>' }).addTo(map);
     layer = L.layerGroup().addTo(map);
     loadCourts();
+    geocodeExtras();
   }
   async function loadCourts() {
     if (!map) return;
@@ -325,8 +366,9 @@
       const res = await fetch(C.overpassUrl, { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
-      const found = data.elements.map(toCourt).filter(Boolean);
+      const found = data.elements.map(toCourt).filter(Boolean).map(fillExample);
       found.forEach(c => { if (!state.byId[c.id]) { state.byId[c.id] = c; state.courts.push(c); } });
+      mergeExtras();
       seedGames(found);
       $('#mapStatus').textContent = found.length ? found.length + (found.length === 1 ? ' campo trovato' : ' campi trovati') : 'Nessun campo in quest\'area';
       setTimeout(() => { $('#mapStatus').textContent = ''; }, 2000);
@@ -424,7 +466,7 @@
       ${games.length ? games.map(g => gameCard(g, true)).join('') : '<p class="muted small" style="margin:0">Nessuna partita in questo momento. Se sei al campo, creane una: è così che gli altri sanno che qui si gioca.</p>'}
       <button type="button" class="btn btn--accent btn--block" data-act="create">⊕ Crea partita</button>
       <p class="sec-title">INFO</p>
-      <dl class="info">${row('Pavimentazione', c.surface)}${row('Illuminazione', c.lit == null ? null : c.lit ? 'sì' : 'no')}${row('Canestri', c.hoops)}${row('Accesso', c.access)}</dl>
+      <dl class="info">${row('Pavimentazione', c.surface)}${row('Illuminazione', c.lit == null ? null : typeof c.lit === 'string' ? c.lit : c.lit ? 'sì' : 'no')}${row('Canestri', c.hoops)}${row('Accesso', c.access)}</dl>
       <p class="sec-title">FOTO</p>
       <div class="photos"><div>Foto 1<br>(degli utenti)</div><div>Foto 2</div><div>Foto 3</div></div>
       <p class="sec-title">SEGNALAZIONI</p>
@@ -439,8 +481,8 @@
         <input type="text" name="note" maxlength="80" placeholder="Dettagli (facoltativo)" aria-label="Dettagli">
         <button type="submit" class="btn btn--primary">Segnala un cambiamento</button>
       </form>
-      <p class="muted small">Info dei campi: OpenStreetMap. Foto e segnalazioni nel prototipo sono simulate.</p>
-      <div class="btn-row"><a class="btn" href="https://www.openstreetmap.org/edit?${c.osmType}=${c.osmId}" target="_blank" rel="noopener">Correggi su OSM</a><a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank" rel="noopener">Indicazioni</a></div>`;
+      <p class="muted small">${c.example && c.example.length === 4 ? 'Info del campo: valori di esempio del prototipo.' : c.example && c.example.length ? 'Info del campo: OpenStreetMap, completate con valori di esempio.' : 'Info del campo: OpenStreetMap.'} Foto e segnalazioni nel prototipo sono simulate.</p>
+      <div class="btn-row">${c.osmType ? `<a class="btn" href="https://www.openstreetmap.org/edit?${c.osmType}=${c.osmId}" target="_blank" rel="noopener">Correggi su OSM</a>` : ''}<a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank" rel="noopener">Indicazioni</a></div>`;
   }
 
   function tplCreate(c) {
