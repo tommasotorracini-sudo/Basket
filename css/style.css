@@ -125,6 +125,10 @@ dl.info dd { margin: 0; font-weight: 700; text-align: right; }
 .game { background: var(--red-soft); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; border: 2px solid var(--ink); }
 .game--off { background: var(--surface); border-color: var(--line); }
 .game__top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.game__actions { display: flex; gap: 8px; align-items: stretch; }
+.game__actions > .btn:first-child { flex: 1; }
+.game__share { width: 48px; flex: 0 0 48px; min-height: 48px; padding: 0; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--ink); }
+.btn[aria-pressed="true"][data-join] { background: var(--red-dark); border-color: var(--red-dark); color: #fff; }
 .game__court, .game__time { font-size: .8rem; font-weight: 700; border: 2px solid var(--ink); border-radius: 8px; padding: 4px 6px; background: rgba(255,255,255,.35); }
 .game__time { text-align: right; }
 .game__format { font-size: 1.6rem; font-weight: 900; text-align: center; }

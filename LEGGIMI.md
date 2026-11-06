@@ -13,14 +13,14 @@ Il nome dell'app («Check Camp») si cambia in `js/config.js` e in `manifest.web
 | La tua posizione | vera, solo se la autorizzi; non viene inviata a nessuno |
 | Dimensione dell'icona del campo (quanto è frequentato) | **simulata** |
 | Creare una partita: solo da chi è al campo («Sono al campo adesso»), formato, orario non prima di adesso, tempo per rispondere | funziona nel telefono; la presenza al campo è dichiarata con una casella, non verificata col GPS |
-| «Ci sono» / «Non ci sono più», barra di riempimento (es. 2 / 4) | funziona; gli altri giocatori che rispondono sono **simulati** |
+| «Ci sono» (si toglie ripremendolo), barra di riempimento che sale e scende (es. 2 / 4) | funziona; gli altri giocatori che rispondono sono **simulati** |
 | Partita non completata entro il tempo per rispondere | diventa «Non confermata» e sparisce dalla mappa |
-| Partita completata | resta sulla mappa come «in corso» per 60 minuti dall'inizio |
+| Partita completata | resta in piedi: se qualcuno toglie «Ci sono», la barra scende e il posto si riapre fino all'inizio; poi «in corso» per 60 minuti |
 | Partite degli altri sulla mappa | **simulate** (circa un campo su tre, dalle 8 alle 22) |
 | Chat della partita | temporanea: la vedono solo gli iscritti e sparisce con la partita; risposte **simulate** |
 | Foto profilo (scelta dalla galleria, ritagliata quadrata) | salvata solo sul telefono |
 | Amici: aggiunti scambiandosi il nickname, richieste da accettare | salvati solo sul telefono; le risposte degli altri sono **simulate** |
-| Chat con gli amici | permanente, nasce quando l'amicizia è accettata; si può mandare una partita in chat |
+| Chat con gli amici | permanente, nasce quando l'amicizia è accettata; con il tasto di condivisione sulla partita la si manda in chat a un amico |
 | Stato degli amici («al campo», «iscritto a una partita») | **simulato**; non esiste online/offline |
 | Allenamento: Tiro (tiri liberi, triple), Palleggio, Dribbling, Stoppatore; riusciti su tentati, media | salvato solo sul telefono, visibile solo a te; i numeri li inserisce l'utente. Categorie, esercizi e parole si cambiano in `js/config.js` |
 | Condivisione dell'allenamento (immagine, WhatsApp) | vera: l'immagine viene creata sul telefono |

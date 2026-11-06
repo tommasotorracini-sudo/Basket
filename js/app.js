@@ -73,12 +73,13 @@
   const FORMATS = { '1c1': 2, '2c2': 4, '3c3': 6, '5c5': 10 };
   function gameStatus(g, now = Date.now()) {
     const full = g.players.length >= g.need;
+    if (full) g.confirmed = true;
     if (now < g.start) {
       if (full) return { key: 'ok', label: 'Confermata' };
-      if (now >= g.deadline) return { key: 'off', label: 'Non confermata' };
+      if (now >= g.deadline && !g.confirmed) return { key: 'off', label: 'Non confermata' };
       return { key: 'open', label: 'Mancano ' + (g.need - g.players.length) };
     }
-    if (full && now < g.start + 60 * MIN) return { key: 'live', label: 'In corso' };
+    if (g.confirmed && now < g.start + 60 * MIN) return { key: 'live', label: 'In corso' };
     return { key: 'gone', label: 'Finita' };
   }
   const visible = g => ['open', 'ok', 'live'].includes(gameStatus(g).key);
@@ -114,9 +115,9 @@
     const me = myName(), st = gameStatus(g).key;
     if (g.players.includes(me)) {
       if (g.creator === me) { toast('Hai creato tu la partita: puoi solo annullarla'); return; }
-      g.players = g.players.filter(p => p !== me);
+      g.players = g.players.filter(p => p !== me);   // «Ci sono» si toglie ripremendolo: la barra scende
       state.history = state.history.filter(h => h.gameId !== g.id);
-      toast('Non sei più iscritto');
+      toast('Hai tolto «Ci sono»');
     } else {
       if (st !== 'open') return;
       g.players.push(me);
@@ -408,9 +409,9 @@
       <div class="meter" aria-label="${g.players.length} su ${g.need}"><span style="width:${pct}%"></span><b>${g.players.length} / ${g.need}</b></div>
       <div class="game__state">${info}</div>
       ${compact ? '' : `<div class="small">${g.players.map(p => state.friends.includes(p) ? `<span class="friend">${esc(p)} ★</span>` : esc(p)).join(', ')}</div>`}
-      ${compact ? '' : (g.creator === me
-        ? `<div class="btn-row"><button type="button" class="btn" data-cancel="${esc(g.id)}">Annulla partita</button></div>`
-        : `<button type="button" class="btn ${joined ? '' : 'btn--primary'} btn--block" data-join="${esc(g.id)}" ${joined || st.key === 'open' ? '' : 'disabled'}>${joined ? 'Non ci sono più' : 'Ci sono'}</button>`)}
+      ${compact ? '' : `<div class="game__actions">${g.creator === me
+        ? `<button type="button" class="btn" data-cancel="${esc(g.id)}">Annulla partita</button>`
+        : `<button type="button" class="btn ${joined ? '' : 'btn--primary'}" data-join="${esc(g.id)}" aria-pressed="${joined}" ${joined || st.key === 'open' ? '' : 'disabled'}>${joined ? 'Ci sono ✓' : 'Ci sono'}</button>`}<button type="button" class="btn btn--icon game__share" data-sendgame="${esc(g.id)}" aria-label="Manda la partita a un amico"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="currentColor"/><circle cx="6" cy="12" r="3" fill="currentColor"/><circle cx="18" cy="19" r="3" fill="currentColor"/><path d="M8.6 10.7 15.4 6.3M8.6 13.3l6.8 4.4" stroke="currentColor" stroke-width="2"/></svg></button></div>${joined && g.creator !== me ? '<p class="muted small" style="margin:0">Premi di nuovo «Ci sono» per toglierlo</p>' : ''}`}
     </article>`;
   }
 
@@ -471,8 +472,7 @@
         <p class="muted small" style="margin:0">La chat la vedono solo gli iscritti e sparisce quando la partita è finita.</p>`
       : '<p class="muted small" style="margin:0">Premi «Ci sono» per vedere la chat della partita.</p>'}
       <div class="btn-row">
-        <button type="button" class="btn" data-sendgame="${esc(g.id)}" ${state.friends.length ? '' : 'disabled'}>Manda a un amico</button>
-        ${joined && (st === 'ok' || st === 'live') ? `<button type="button" class="btn" data-sharegame="${esc(g.id)}">Condividi</button>` : ''}
+        ${joined && (st === 'ok' || st === 'live') ? `<button type="button" class="btn" data-sharegame="${esc(g.id)}">Immagine per le storie</button>` : ''}
       </div>
       <button type="button" class="btn btn--block" data-opencourt="${esc(g.courtId)}">Vai al campo</button>`;
   }
@@ -599,7 +599,7 @@
         if (el.dataset.withgame) { sendChat(n, { gameId: el.dataset.withgame }); toast('Partita inviata a ' + n); }
         openSheet('chat', n); refresh(); return;
       }
-      if ((el = q('[data-sendgame]'))) { openSheet('pickFriend', null, { gameId: el.dataset.sendgame }); return; }
+      if ((el = q('[data-sendgame]'))) { if (!state.friends.length) { toast('Aggiungi un amico dal profilo per mandargli la partita'); return; } openSheet('pickFriend', null, { gameId: el.dataset.sendgame }); return; }
       if ((el = q('[data-pickgame]'))) { openSheet('pickGame', el.dataset.pickgame); return; }
       if ((el = q('[data-sharegame]'))) { const g = state.games.find(x => x.id === el.dataset.sharegame); if (g) openShare(Object.assign({ kind: 'game' }, g)); return; }
       if ((el = q('[data-sharetrain]'))) { openShare({ kind: 'train', drill: el.dataset.sharetrain }); return; }
