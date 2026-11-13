@@ -1,9 +1,9 @@
 // Service worker: tiene in memoria l'interfaccia, così l'app si apre anche con rete debole.
 // Mappa e campi richiedono comunque la connessione.
-const CACHE = 'checkcamp-v13';
+const CACHE = 'checkcamp-v18';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'js/config.js', 'js/app.js', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png',
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/favicon-32.png', 'icons/apple-touch-icon.png', 'fonts/jersey-93.ttf',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];

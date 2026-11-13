@@ -23,6 +23,7 @@ Il nome dell'app («Check Camp») si cambia in `js/config.js` e in `manifest.web
 | Foto profilo (scelta dalla galleria, ritagliata quadrata) | salvata solo sul telefono |
 | Amici: aggiunti scambiandosi il nickname, richieste da accettare | salvati solo sul telefono; le risposte degli altri sono **simulate** |
 | Chat con gli amici | permanente, nasce quando l'amicizia è accettata; con il tasto di condivisione sulla partita la si manda in chat a un amico |
+| Sezione Chat | la vecchia «Community»: con «+ Crea chat» si cerca un amico per nickname (come nel profilo), si vedono le richieste e, quando l'amicizia è accettata, si apre la chat da lì |
 | Stato degli amici («al campo», «iscritto a una partita») | **simulato**; non esiste online/offline |
 | Allenamento: Tiro (tiri liberi, triple), Palleggio, Dribbling, Stoppatore; riusciti su tentati, media | salvato solo sul telefono, visibile solo a te; i numeri li inserisce l'utente. Categorie, esercizi e parole si cambiano in `js/config.js` |
 | Condivisione dell'allenamento (immagine, WhatsApp) | vera: l'immagine viene creata sul telefono |
@@ -37,7 +38,7 @@ Nella tesi va scritto così: il prototipo usa dati reali per i campi e dati simu
 
 ```
 index.html            struttura delle schermate
-css/style.css         stile del prototipo: il rosso del logo e le sue tonalità (variabili :root in cima al file)
+css/style.css         stile del prototipo: rosso #E40521 e blu #2B2F79 del marchio con le loro tonalità, carattere DM Sans (variabili :root in cima al file)
 js/config.js          zona iniziale della mappa, nome, durata delle segnalazioni
 js/app.js             logica dell'app
 manifest.webmanifest  nome, icone e colori dell'app installata
@@ -70,5 +71,5 @@ In `js/config.js` modifica `center` con le coordinate della tua zona (le trovi s
 ## Prossimi passi
 
 1. Definire il design in Figma (wireframe → interfaccia).
-2. Riportare colori, caratteri e icone del marchio in `css/style.css` e in `icons/`.
+2. Colori, caratteri e icone del marchio sono applicati. Caratteri: DM Sans (Google Fonts, licenza SIL Open Font License) per i testi; Jersey 93 di Damien Gosset (sweeep.fr, scaricato da DaFont, gratuito per uso personale) per i titoli, in `fonts/`. Jersey 93 è usato solo in questo prototipo di tesi, non commerciale: per un uso commerciale servirebbe la licenza dell'autore.
 3. Usare il link o un QR code per il test con 5-8 persone.

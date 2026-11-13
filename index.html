@@ -5,10 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Check Camp</title>
   <meta name="description" content="Prototipo di tesi: trova un campo da basket, guarda dove si sta giocando e unisciti a una partita.">
-  <meta name="theme-color" content="#ff0d19">
+  <meta name="theme-color" content="#e40521">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon-192.png">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..900&display=swap">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
@@ -43,11 +47,11 @@
       <p class="map-status" id="mapStatus" role="status" aria-live="polite"></p>
     </section>
 
-    <!-- COMMUNITY: CHAT CON GLI AMICI -->
-    <section class="view" id="view-community" aria-label="Community">
+    <!-- CHAT CON GLI AMICI (prima si chiamava Community) -->
+    <section class="view" id="view-community" aria-label="Chat">
       <header class="view-head"><h1>Chat</h1></header>
       <div id="chatList" class="list"></div>
-      <button type="button" class="btn btn--primary fab" id="newChat">+ Chat personale</button>
+      <button type="button" class="btn btn--primary fab" id="newChat">+ Crea chat</button>
     </section>
 
     <!-- TRAIN: ALLENAMENTO -->
@@ -139,7 +143,7 @@
 
   <nav class="tabbar" aria-label="Navigazione principale">
     <button type="button" class="tabbar__item is-active" data-view="home">Home</button>
-    <button type="button" class="tabbar__item" data-view="community">Community</button>
+    <button type="button" class="tabbar__item" data-view="community">Chat</button>
     <button type="button" class="tabbar__item" data-view="train">Train</button>
     <button type="button" class="tabbar__item" data-view="profile">Profilo</button>
   </nav>

@@ -15,7 +15,7 @@
     set(k, v) { try { localStorage.setItem('checkcamp:' + k, JSON.stringify(v)); } catch (e) { /* niente */ } },
     clear() { try { Object.keys(localStorage).filter(k => k.startsWith('checkcamp:')).forEach(k => localStorage.removeItem(k)); } catch (e) { /* niente */ } }
   };
-  const AVATAR_COLORS = ['#ff0d19', '#ff6b72', '#ffb3b6', '#ffd6d8'];   // tonalità del rosso, tutte con testo scuro leggibile
+  const AVATAR_COLORS = ['#aeb0cc', '#dfe0eb', '#f07685', '#fbd7db'];   // tonalità chiare del blu e del rosso, tutte con testo scuro leggibile
   const state = {
     courts: [], byId: {},
     profile: store.get('profile', null) || { nickname: '', color: 0, userId: 'USER' + (100 + Math.floor(Math.random() * 900)) },
@@ -285,7 +285,7 @@
     if (state.requests.includes(n)) { makeFriend(n); toast('Ora tu e ' + n + ' siete amici'); refresh(); return; }
     if (!state.sent.includes(n)) state.sent.push(n);
     save('sent'); toast('Richiesta inviata a ' + n); refresh();
-    setTimeout(() => { if (state.sent.includes(n)) { makeFriend(n); toast(n + ' ha accettato: ora potete scrivervi'); refresh(); } }, 5000);
+    setTimeout(() => { if (state.sent.includes(n)) { makeFriend(n); toast(n + ' ha accettato: trovi la chat nella sezione Chat'); refresh(); } }, 5000);
   }
   function sendChat(n, msg) {
     (state.chats[n] = state.chats[n] || []).push(Object.assign({ who: myName(), ts: Date.now() }, msg));
@@ -303,19 +303,23 @@
 
   /* ---------- condivisione (immagine per storie e chat) ---------- */
   let shareItem = null;
-  function openShare(item) { shareItem = item; $('#shareCourt').checked = false; $('#shareCourtRow').hidden = item.kind !== 'game'; drawShare(); $('#shareModal').hidden = false; }
+  function openShare(item) {
+    shareItem = item; $('#shareCourt').checked = false; $('#shareCourtRow').hidden = item.kind !== 'game'; drawShare(); $('#shareModal').hidden = false;
+    if (document.fonts) document.fonts.load('100px "Jersey 93"').then(drawShare).catch(() => {});   // ridisegna quando il carattere dei titoli è pronto
+  }
   function drawShare() {
     const it = shareItem; if (!it) return;
     const cv = $('#shareCanvas'), g = cv.getContext('2d'), W = 1080, H = 1920;
-    const F = (w, s) => `${w} ${s}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
-    g.fillStyle = '#ff0d19'; g.fillRect(0, 0, W, H);
-    g.strokeStyle = 'rgba(22,22,22,.18)'; g.lineWidth = 8;
+    const F = (w, s) => `${w} ${s}px "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+    const T = s => `${s}px "Jersey 93", "DM Sans", system-ui, sans-serif`;   // titoli
+    g.fillStyle = '#e40521'; g.fillRect(0, 0, W, H);
+    g.strokeStyle = 'rgba(255,255,255,.22)'; g.lineWidth = 8;
     g.beginPath(); g.arc(W / 2, H + 140, 620, 0, Math.PI * 2); g.stroke();
     g.beginPath(); g.arc(W / 2, H + 140, 260, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = '#161616'; g.font = F('900', 64); g.fillText(C.appName.toUpperCase(), 90, 220);
+    g.fillStyle = '#ffffff'; g.font = T(80); g.fillText(C.appName.toUpperCase(), 90, 220);
     if (it.kind === 'game') {
       g.font = F('600', 54); g.fillText('Partita al campetto', 90, 520);
-      g.font = F('900', 260); g.fillText(fmtLabel(it.format), 80, 800);
+      g.font = T(230); g.fillText(fmtLabel(it.format).toUpperCase(), 80, 800);
       const d = new Date(it.start);
       g.font = F('700', 70); g.fillText(d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }), 90, 980);
       g.font = F('500', 62); g.fillText('ore ' + hhmm(it.start) + ' · ' + it.need + ' giocatori', 90, 1070);
@@ -323,16 +327,16 @@
     } else {
       const list = state.train[it.drill];
       g.font = F('600', 54); g.fillText((CAT_OF[it.drill].name === DRILLS[it.drill] ? 'Allenamento' : 'Allenamento · ' + CAT_OF[it.drill].name) + ' · ' + DRILLS[it.drill], 90, 520);
-      g.font = F('900', 260); g.fillText(avg(list), 80, 800);
+      g.font = T(230); g.fillText(avg(list), 80, 800);
       g.font = F('500', 60); g.fillText('media su ' + list.length + (list.length === 1 ? ' sessione' : ' sessioni'), 90, 900);
       const last = list.slice(-6), max = Math.max(10, ...last.map(s => s.att)), bw = 120;
       last.forEach((s, i) => {
         const x = 90 + i * (bw + 30), hA = 500 * s.att / max, hM = 500 * s.made / max, y0 = 1550;
-        g.fillStyle = '#ffd6d8'; g.fillRect(x, y0 - hA, bw, hA);
+        g.fillStyle = '#f6a8b1'; g.fillRect(x, y0 - hA, bw, hA);
         g.fillStyle = '#161616'; g.fillRect(x, y0 - hM, bw, hM);
       });
     }
-    g.fillStyle = '#161616'; g.font = F('500', 40); g.fillText('Trova un campo, guarda chi c\'è, entra in partita.', 90, 1820);
+    g.fillStyle = '#ffffff'; g.font = F('500', 40); g.fillText('Trova un campo, guarda chi c\'è, entra in partita.', 90, 1820);
   }
   function shareBlob(cb) { $('#shareCanvas').toBlob(b => cb(b), 'image/png'); }
   function saveShare() { shareBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'checkcamp.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }); }
@@ -394,7 +398,7 @@
       state.me = [pos.coords.latitude, pos.coords.longitude]; $('#mapStatus').textContent = '';
       if (!map) return;
       if (meMarker) meMarker.remove();
-      meMarker = L.circleMarker(state.me, { radius: 8, color: '#fff', weight: 3, fillColor: '#3d8fd6', fillOpacity: 1 }).addTo(map);
+      meMarker = L.circleMarker(state.me, { radius: 8, color: '#fff', weight: 3, fillColor: '#2b2f79', fillOpacity: 1 }).addTo(map);
       map.setView(state.me, 15); loadCourts();
     }, () => { $('#mapStatus').textContent = ''; toast('Posizione non concessa: puoi muovere la mappa a mano'); }, { enableHighAccuracy: true, timeout: 10000 });
   }
@@ -430,6 +434,8 @@
       title = fmtLabel(g.format) + ' · ' + gameStatus(g).label; sub = g.courtName; body = tplGame(g);
     } else if (s.type === 'chat') {
       title = s.id; sub = friendStatus(s.id) || 'amico'; body = tplChat(s.id);
+    } else if (s.type === 'newChat') {
+      title = 'Crea chat'; sub = 'Aggiungi un amico con il suo nickname'; body = tplNewChat();
     } else if (s.type === 'pickFriend') {
       title = s.gameId ? 'Manda la partita a un amico' : 'Nuova chat'; body = tplPickFriend(s.gameId);
     } else if (s.type === 'pickGame') {
@@ -448,9 +454,9 @@
     const info = st.key === 'open' ? `Mancano ${g.need - g.players.length} · rispondi entro le ${hhmm(g.deadline)}` : st.key === 'ok' ? 'Confermata: siete al completo' : st.key === 'live' ? 'In corso' : st.label;
     return `<article class="game ${st.key === 'off' ? 'game--off' : ''}" ${compact ? `data-opengame="${esc(g.id)}" role="button" tabindex="0"` : ''}>
       <div class="game__top"><div class="game__court">${esc(g.courtName)}</div><div class="game__format">${fmtLabel(g.format)}</div><div class="game__time">inizio<br>${hhmm(g.start)}</div></div>
-      <div class="meter" aria-label="${g.players.length} su ${g.need}"><span style="width:${pct}%"></span><b>${g.players.length} / ${g.need}</b></div>
+      <div class="meter-row" aria-label="${g.players.length} su ${g.need}"><div class="meter" aria-hidden="true"><span style="width:${pct}%"></span></div><b>${g.players.length} / ${g.need}</b></div>
       <div class="game__state">${info}</div>
-      ${compact ? '' : `<div class="small">${g.players.map(p => state.friends.includes(p) ? `<span class="friend">${esc(p)} ★</span>` : esc(p)).join(', ')}</div>`}
+      ${compact ? '' : `<div class="small">${g.players.map(p => state.friends.includes(p) ? `<span class="friend">${esc(p)} (amico)</span>` : esc(p)).join(', ')}</div>`}
       ${compact ? '' : `<div class="game__actions">${g.creator === me
         ? `<button type="button" class="btn" data-cancel="${esc(g.id)}">Annulla partita</button>`
         : `<button type="button" class="btn ${joined ? '' : 'btn--primary'}" data-join="${esc(g.id)}" aria-pressed="${joined}" ${joined || st.key === 'open' ? '' : 'disabled'}>${joined ? 'Ci sono ✓' : 'Ci sono'}</button>`}<button type="button" class="btn btn--icon game__share" data-sendgame="${esc(g.id)}" aria-label="Manda la partita a un amico"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="currentColor"/><circle cx="6" cy="12" r="3" fill="currentColor"/><circle cx="18" cy="19" r="3" fill="currentColor"/><path d="M8.6 10.7 15.4 6.3M8.6 13.3l6.8 4.4" stroke="currentColor" stroke-width="2"/></svg></button></div>${joined && g.creator !== me ? '<p class="muted small" style="margin:0">Premi di nuovo «Ci sono» per toglierlo</p>' : ''}`}
@@ -528,9 +534,24 @@
       <form class="chat-form" id="chatForm"><input type="text" name="text" maxlength="200" placeholder="Scrivi…" autocomplete="off" aria-label="Messaggio"><button type="submit" class="btn btn--primary">Invia</button></form>
       <button type="button" class="btn btn--block" data-pickgame="${esc(n)}">Manda una partita</button>`;
   }
+  function requestsHtml() {
+    return (state.requests.length ? `<p class="small" style="margin:0"><span class="req-badge">${state.requests.length}</span> ${state.requests.length === 1 ? 'nuova richiesta' : 'nuove richieste'}</p>` +
+      state.requests.map(n => `<div class="row-item"><strong>${esc(n)}</strong><span class="btn-row" style="flex:0"><button type="button" class="btn btn--primary" data-accept="${esc(n)}">Accetta</button><button type="button" class="btn" data-decline="${esc(n)}">Rifiuta</button></span></div>`).join('')
+      : '<p class="muted small" style="margin:0">Nessuna richiesta.</p>') + (state.sent.length ? `<p class="muted small" style="margin:0">In attesa: ${state.sent.map(esc).join(', ')}</p>` : '');
+  }
+  /* «Crea chat»: cerchi un amico con il nickname, come nel profilo; quando accetta, la chat è pronta */
+  function tplNewChat() {
+    return `<form class="inline-form" id="chatAddForm">
+        <input type="text" name="nick" placeholder="Cerca il nickname di un amico" aria-label="Nickname di un amico" autocomplete="off">
+        <button type="submit" class="btn btn--primary">Aggiungi</button>
+      </form>
+      <p class="muted small">La chat si apre quando l'amicizia è accettata. Prova con «Ale», «Giuly» o «Teo».</p>
+      <h3 class="sec-title">Richieste</h3>${requestsHtml()}
+      <h3 class="sec-title">Scrivi a un amico</h3>${tplPickFriend(null)}`;
+  }
   function tplPickFriend(gameId) {
     return state.friends.length ? `<div class="list">${state.friends.map(f => `<button type="button" class="chat-row" data-chatto="${esc(f)}" ${gameId ? `data-withgame="${esc(gameId)}"` : ''}><span class="avatar">${esc(f[0])}</span><span class="chat-row__txt"><strong>${esc(f)}</strong></span></button>`).join('')}</div>`
-      : '<p class="muted">Non hai ancora amici. Aggiungili dal profilo con il loro nickname.</p>';
+      : '<p class="muted small">Non hai ancora amici: cercali qui sopra o dal profilo con il loro nickname.</p>';
   }
   function tplPickGame(n) {
     const list = state.games.filter(visible).sort((a, b) => a.start - b.start);
@@ -558,7 +579,7 @@
     return Object.keys(cat.drills).map(d => `<div class="drill">
       <div class="drill__head"><h3>${DRILLS[d]}</h3><span class="avg">Media ${avg(state.train[d])}</span><button type="button" class="btn" data-adddrill="${d}">Aggiungi</button></div>
       ${chartHtml(state.train[d])}
-      <p class="small muted" style="margin:0"><span style="color:var(--red-dark)">■</span> ${esc(cat.fatti)} &nbsp;<span style="color:var(--red-light)">■</span> ${esc(cat.tentati)}</p>
+      <p class="small muted" style="margin:0"><span style="color:var(--blue)">■</span> ${esc(cat.fatti)} &nbsp;<span style="color:var(--red-light)">■</span> ${esc(cat.tentati)}</p>
       ${state.train[d].length ? `<div class="btn-row"><button type="button" class="btn" data-sharetrain="${d}">Condividi</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`${DRILLS[d]}: media ${avg(state.train[d])} su ${state.train[d].length} sessioni (${C.appName})`)}">WhatsApp</a></div>` : ''}
     </div>`).join('');
   }
@@ -568,7 +589,7 @@
     const names = Object.keys(state.chats).filter(n => state.friends.includes(n));
     $('#chatList').innerHTML = names.length ? names.map(n => { const l = state.chats[n][state.chats[n].length - 1] || {}; const st = friendStatus(n);
       return `<button type="button" class="chat-row" data-chatto="${esc(n)}"><span class="avatar">${esc(n[0])}</span><span class="chat-row__txt"><strong>${esc(n)}</strong>${st ? ` <span class="small">· ${esc(st)}</span>` : ''}<div class="chat-row__last">${l.gameId ? 'Partita condivisa' : esc(l.text || '')}</div></span></button>`; }).join('')
-      : '<p class="empty">Le chat nascono quando un\'amicizia è reciproca. Aggiungi gli amici dal profilo con il loro nickname.</p>';
+      : '<p class="empty">Le chat nascono quando un\'amicizia è reciproca. Tocca «Crea chat» e cerca un amico con il suo nickname.</p>';
   }
   function renderTrainView() {
     $('#trainBody').innerHTML = `
@@ -582,9 +603,7 @@
     $('#avatarBtn').setAttribute('aria-label', p.photo ? 'Cambia foto profilo' : 'Scegli una foto profilo');
     $('#removePhoto').hidden = !p.photo;
     $('#userId').textContent = p.nickname.trim() || p.userId;
-    $('#requests').innerHTML = (state.requests.length ? `<p class="small" style="margin:0"><span class="req-badge">${state.requests.length}</span> ${state.requests.length === 1 ? 'nuova richiesta' : 'nuove richieste'}</p>` +
-      state.requests.map(n => `<div class="row-item"><strong>${esc(n)}</strong><span class="btn-row" style="flex:0"><button type="button" class="btn btn--primary" data-accept="${esc(n)}">Accetta</button><button type="button" class="btn" data-decline="${esc(n)}">Rifiuta</button></span></div>`).join('')
-      : '<p class="muted small" style="margin:0">Nessuna richiesta.</p>') + (state.sent.length ? `<p class="muted small" style="margin:0">In attesa: ${state.sent.map(esc).join(', ')}</p>` : '');
+    $('#requests').innerHTML = requestsHtml();
     $('#friendsList').innerHTML = state.friends.length ? state.friends.map(f => { const st = friendStatus(f);
       return `<div class="row-item"><span><strong>${esc(f)}</strong>${st ? `<br><span class="small">${esc(st)}</span>` : ''}</span><span class="btn-row" style="flex:0"><button type="button" class="btn" data-chatto="${esc(f)}">Chat</button><button type="button" class="btn" data-unfriend="${esc(f)}">Rimuovi</button></span></div>`; }).join('')
       : '<p class="muted small" style="margin:0">Nessun amico ancora.</p>';
@@ -641,7 +660,7 @@
         if (el.dataset.withgame) { sendChat(n, { gameId: el.dataset.withgame }); toast('Partita inviata a ' + n); }
         openSheet('chat', n); refresh(); return;
       }
-      if ((el = q('[data-sendgame]'))) { if (!state.friends.length) { toast('Aggiungi un amico dal profilo per mandargli la partita'); return; } openSheet('pickFriend', null, { gameId: el.dataset.sendgame }); return; }
+      if ((el = q('[data-sendgame]'))) { if (!state.friends.length) { toast('Aggiungi un amico dalla sezione Chat o dal profilo per mandargli la partita'); return; } openSheet('pickFriend', null, { gameId: el.dataset.sendgame }); return; }
       if ((el = q('[data-pickgame]'))) { openSheet('pickGame', el.dataset.pickgame); return; }
       if ((el = q('[data-sharegame]'))) { const g = state.games.find(x => x.id === el.dataset.sharegame); if (g) openShare(Object.assign({ kind: 'game' }, g)); return; }
       if ((el = q('[data-sharetrain]'))) { openShare({ kind: 'train', drill: el.dataset.sharetrain }); return; }
@@ -670,6 +689,10 @@
     $('#sheet').addEventListener('submit', e => {
       e.preventDefault();
       const s = state.sheet, f = e.target;
+      if (f.id === 'chatAddForm') {
+        const v = f.nick.value; f.nick.value = ''; if (document.activeElement) document.activeElement.blur();
+        addFriendByNick(v); renderSheet(); return;
+      }
       if (f.id === 'createForm') {
         const c = state.byId[s.id];
         const [hh, mm] = f.start.value.split(':').map(Number);
@@ -701,7 +724,7 @@
       }
     });
 
-    $('#newChat').addEventListener('click', () => openSheet('pickFriend', null));
+    $('#newChat').addEventListener('click', () => openSheet('newChat', null));
     $('#profileForm').addEventListener('submit', e => {
       e.preventDefault();
       const old = myName(); state.profile.nickname = $('#nickname').value.trim(); save('profile');
