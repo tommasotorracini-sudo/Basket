@@ -25,7 +25,7 @@ Il nome dell'app («Check Camp») si cambia in `js/config.js` e in `manifest.web
 | Chat con gli amici | permanente, nasce quando l'amicizia è accettata; con il tasto di condivisione sulla partita la si manda in chat a un amico |
 | Sezione Chat | la vecchia «Community»: con «+ Crea chat» si cerca un amico per nickname (come nel profilo), si vedono le richieste e, quando l'amicizia è accettata, si apre la chat da lì |
 | Stato degli amici («al campo», «iscritto a una partita») | **simulato**; non esiste online/offline |
-| Allenamento: Tiro (tiri liberi, triple), Palleggio, Dribbling, Stoppatore; riusciti su tentati, media | salvato solo sul telefono, visibile solo a te; i numeri li inserisce l'utente. Categorie, esercizi e parole si cambiano in `js/config.js` |
+| Allenamento: Tiro, Palleggio, Dribbling, Stoppatore, senza esercizi; riusciti su tentati, media | salvato solo sul telefono, visibile solo a te; i numeri li inserisce l'utente, a sua discrezione. Per ogni voce sceglie Allenamento o Partita, e la media è separata: una statistica in allenamento e una in partita. Categorie e parole si cambiano in `js/config.js` |
 | Condivisione dell'allenamento (immagine, WhatsApp) | vera: l'immagine viene creata sul telefono |
 | Campi preferiti e avviso quando parte una partita | preferiti veri; la partita che fa scattare l'avviso è **simulata** |
 | Segnalazioni sullo stato del campo, con conferme | **simulate**; quelle che aggiungi restano sul telefono |
@@ -43,7 +43,7 @@ js/config.js          zona iniziale della mappa, nome, durata delle segnalazioni
 js/app.js             logica dell'app
 manifest.webmanifest  nome, icone e colori dell'app installata
 sw.js                 service worker (fa aprire l'app anche con rete debole)
-icons/                icone provvisorie, da sostituire con quelle del marchio
+icons/                icone dal logo definitivo dell'autore (20 novembre 2026); favicon con il solo simbolo, perché a 32 px la scritta non si legge
 ```
 
 ## Pubblicarla gratis su GitHub Pages

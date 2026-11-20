@@ -259,3 +259,9 @@ h2 { font-size: 1.35rem; }
 .user-id { font-size: 1.6rem; }
 .cat { font-size: 1.3rem; }
 .cat small { font-family: var(--font); letter-spacing: 0; }
+
+/* Allenamento: ogni voce dice se viene da un allenamento o da una partita */
+.seg--2 { grid-template-columns: 1fr 1fr; width: 100%; }
+.chart-x .ctx { display: block; font-weight: 700; font-size: .65rem; }
+.chart-x .ctx--partita { color: var(--red-dark); }
+.chart-x .ctx--allen { color: var(--ink-2); font-weight: 500; }

@@ -27,7 +27,7 @@
     sent: store.get('sent', []),                       // richieste inviate
     chats: store.get('chats', {}),                     // chat permanenti con gli amici
     history: store.get('history', []),
-    train: store.get('train', { liberi: [], triple: [] }),
+    train: store.get('train', {}),
     prefs: store.get('prefs', { notifyFavs: true }),
     notified: store.get('notified', []),
     favSeeded: store.get('favSeeded', []),
@@ -294,11 +294,17 @@
   }
 
   /* ---------- allenamento: solo personale ---------- */
-  const CATS = C.train, DRILLS = {}, CAT_OF = {};
-  CATS.forEach(c => Object.entries(c.drills).forEach(([k, v]) => { DRILLS[k] = v; CAT_OF[k] = c; }));
-  Object.keys(DRILLS).forEach(k => { if (!state.train[k]) state.train[k] = []; });
+  /* Allenamento: quattro categorie, nessun esercizio. Ogni voce dice se viene da un allenamento o da una partita. */
+  const CATS = C.train, CTX = { allenamento: 'Allenamento', partita: 'Partita' };
+  (function migraAllenamento() {   // i dati salvati con le versioni precedenti (tiri liberi, triple, stoppate) confluiscono nelle categorie
+    const t = state.train, prima = { liberi: 'tiro', triple: 'tiro', stoppate: 'stoppatore' }; let cambiato = false;
+    Object.keys(prima).forEach(k => { if (t[k]) { t[prima[k]] = (t[prima[k]] || []).concat(t[k]); delete t[k]; cambiato = true; } });
+    CATS.forEach(c => { if (!t[c.id]) t[c.id] = []; t[c.id].forEach(x => { if (!x.ctx) { x.ctx = 'allenamento'; cambiato = true; } }); t[c.id].sort((x, y) => x.ts - y.ts); });
+    if (cambiato) save('train');
+  })();
   const catById = id => CATS.find(c => c.id === id) || CATS[0];
-  const catTotals = c => Object.keys(c.drills).reduce((a, k) => a.concat(state.train[k]), []);
+  const ofCtx = (id, ctx) => state.train[id].filter(x => x.ctx === ctx);
+  const volte = (n, ctx) => n + ' ' + (ctx === 'partita' ? (n === 1 ? 'partita' : 'partite') : (n === 1 ? 'allenamento' : 'allenamenti'));
   function avg(list) { const m = list.reduce((a, s) => a + s.made, 0), t = list.reduce((a, s) => a + s.att, 0); return t ? Math.round(m / t * 100) + '%' : '—'; }
 
   /* ---------- condivisione (immagine per storie e chat) ---------- */
@@ -325,15 +331,15 @@
       g.font = F('500', 62); g.fillText('ore ' + hhmm(it.start) + ' · ' + it.need + ' giocatori', 90, 1070);
       if ($('#shareCourt').checked) { g.font = F('800', 60); g.fillText(it.courtName.slice(0, 28), 90, 1200); }
     } else {
-      const list = state.train[it.drill];
-      g.font = F('600', 54); g.fillText((CAT_OF[it.drill].name === DRILLS[it.drill] ? 'Allenamento' : 'Allenamento · ' + CAT_OF[it.drill].name) + ' · ' + DRILLS[it.drill], 90, 520);
+      const cat = catById(it.cat), list = ofCtx(cat.id, it.ctx);
+      g.font = F('600', 54); g.fillText(CTX[it.ctx] + ' · ' + cat.name, 90, 520);
       g.font = T(230); g.fillText(avg(list), 80, 800);
-      g.font = F('500', 60); g.fillText('media su ' + list.length + (list.length === 1 ? ' sessione' : ' sessioni'), 90, 900);
-      const last = list.slice(-6), max = Math.max(10, ...last.map(s => s.att)), bw = 120;
-      last.forEach((s, i) => {
-        const x = 90 + i * (bw + 30), hA = 500 * s.att / max, hM = 500 * s.made / max, y0 = 1550;
-        g.fillStyle = '#f6a8b1'; g.fillRect(x, y0 - hA, bw, hA);
-        g.fillStyle = '#161616'; g.fillRect(x, y0 - hM, bw, hM);
+      g.font = F('500', 60); g.fillText('media su ' + volte(list.length, it.ctx), 90, 900);
+      const last = list.slice(-6), max = Math.max(10, ...last.map(x => x.att)), bw = 120;
+      last.forEach((x, i) => {
+        const bx = 90 + i * (bw + 30), hA = 500 * x.att / max, hM = 500 * x.made / max, y0 = 1550;
+        g.fillStyle = '#f6a8b1'; g.fillRect(bx, y0 - hA, bw, hA);
+        g.fillStyle = '#161616'; g.fillRect(bx, y0 - hM, bw, hM);
       });
     }
     g.fillStyle = '#ffffff'; g.font = F('500', 40); g.fillText('Trova un campo, guarda chi c\'è, entra in partita.', 90, 1820);
@@ -441,7 +447,7 @@
     } else if (s.type === 'pickGame') {
       title = 'Manda una partita'; sub = 'a ' + s.id; body = tplPickGame(s.id);
     } else if (s.type === 'train') {
-      const cat = s.adding ? CAT_OF[s.adding] : catById(s.cat); title = cat.name; sub = 'Visibile solo a te'; body = tplTrain(s.adding, cat);
+      title = catById(s.cat).name; sub = 'Visibile solo a te'; body = tplTrain(s);
     }
     $('#sheetTitle').textContent = title; $('#sheetSub').textContent = sub;
     const b = $('#sheetBody'); b.innerHTML = body;
@@ -558,30 +564,34 @@
     return list.length ? list.map(g => `<div data-sendto="${esc(n)}" data-gid="${esc(g.id)}">${gameCard(g, false).replace(/<button[\s\S]*?<\/button>/g, '').replace(/<div class="btn-row">\s*<\/div>/g, '')}</div>`).join('') : '<p class="muted">Nessuna partita in corso nei campi caricati.</p>';
   }
 
-  function chartHtml(list) {
-    const last = list.slice(-6); if (!last.length) return '<p class="muted small" style="margin:0">Nessuna sessione: tocca «Aggiungi».</p>';
-    const max = Math.max(10, ...last.map(s => s.att));
-    return `<div class="chart">${last.map(s => `<div class="col"><div class="att" style="height:${s.att / max * 100}%"><span class="lbl-top">${s.att}</span><div class="made" style="height:${s.att ? s.made / s.att * 100 : 0}%"><div class="lbl-in">${s.made}</div></div></div></div>`).join('')}</div>
-      <div class="chart-x">${last.map(s => `<span>${new Date(s.ts).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}</span>`).join('')}</div>`;
+  function chartHtml(list, ctx) {
+    const last = list.slice(-6); if (!last.length) return `<p class="muted small" style="margin:0">${ctx === 'partita' ? 'Nessuna partita segnata' : 'Nessun allenamento segnato'}: tocca «Aggiungi».</p>`;
+    const max = Math.max(10, ...last.map(x => x.att));
+    return `<div class="chart">${last.map(x => `<div class="col"><div class="att" style="height:${x.att / max * 100}%"><span class="lbl-top">${x.att}</span><div class="made" style="height:${x.att ? x.made / x.att * 100 : 0}%"><div class="lbl-in">${x.made}</div></div></div></div>`).join('')}</div>
+      <div class="chart-x">${last.map(x => `<span>${new Date(x.ts).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}</span>`).join('')}</div>`;
   }
-  function tplTrain(adding, cat) {
-    if (adding) {
-      return `<div class="adder" id="adder" data-drill="${adding}">
-        <h2>${DRILLS[adding]}</h2>
+  function tplTrain(s) {
+    const cat = catById(s.cat), ctx = s.ctx || 'allenamento';
+    const seg = `<div class="seg seg--2" role="group" aria-label="Allenamento o partita">${Object.keys(CTX).map(k => `<button type="button" data-ctx="${k}" aria-pressed="${k === ctx}">${CTX[k]}</button>`).join('')}</div>`;
+    if (s.adding) {
+      return `<div class="adder" id="adder" data-cat="${cat.id}">
+        <h2>${esc(cat.name)}</h2>
+        ${seg}
         <div class="adder__nums"><input type="number" id="addMade" min="0" max="200" value="5" aria-label="${esc(cat.fatti)}"> / <input type="number" id="addAtt" min="1" max="200" value="10" aria-label="${esc(cat.tentati)}"></div>
-        <div class="adder__ctrl"><div><button type="button" class="btn" data-step="made" data-d="-1" aria-label="Uno fatto in meno">−</button><button type="button" class="btn" data-step="made" data-d="1" aria-label="Uno fatto in più">+</button></div>
+        <div class="adder__ctrl"><div><button type="button" class="btn" data-step="made" data-d="-1" aria-label="Uno riuscito in meno">−</button><button type="button" class="btn" data-step="made" data-d="1" aria-label="Uno riuscito in più">+</button></div>
         <div><button type="button" class="btn" data-step="att" data-d="-1" aria-label="Un tentativo in meno">−</button><button type="button" class="btn" data-step="att" data-d="1" aria-label="Un tentativo in più">+</button></div></div>
         <p class="small" style="margin:0">${esc(cat.fatti)} / ${esc(cat.tentati)}</p>
-        <button type="button" class="btn btn--primary btn--block" data-act="saveDrill">Aggiungi</button>
+        <button type="button" class="btn btn--primary btn--block" data-act="saveDrill">Salva</button>
         <button type="button" class="btn btn--block" data-act="backTrain">Annulla</button>
       </div>`;
     }
-    return Object.keys(cat.drills).map(d => `<div class="drill">
-      <div class="drill__head"><h3>${DRILLS[d]}</h3><span class="avg">Media ${avg(state.train[d])}</span><button type="button" class="btn" data-adddrill="${d}">Aggiungi</button></div>
-      ${chartHtml(state.train[d])}
+    const list = ofCtx(cat.id, ctx);
+    return `${seg}<div class="drill">
+      <div class="drill__head"><h3>${CTX[ctx]}</h3><span class="avg">Media ${avg(list)}</span><button type="button" class="btn" data-adddrill="${cat.id}">Aggiungi</button></div>
+      ${chartHtml(list, ctx)}
       <p class="small muted" style="margin:0"><span style="color:var(--blue)">■</span> ${esc(cat.fatti)} &nbsp;<span style="color:var(--red-light)">■</span> ${esc(cat.tentati)}</p>
-      ${state.train[d].length ? `<div class="btn-row"><button type="button" class="btn" data-sharetrain="${d}">Condividi</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`${DRILLS[d]}: media ${avg(state.train[d])} su ${state.train[d].length} sessioni (${C.appName})`)}">WhatsApp</a></div>` : ''}
-    </div>`).join('');
+      ${list.length ? `<div class="btn-row"><button type="button" class="btn" data-sharetrain="${cat.id}">Condividi</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(`${CTX[ctx]} · ${cat.name}: media ${avg(list)} su ${volte(list.length, ctx)} (${C.appName})`)}">WhatsApp</a></div>` : ''}
+    </div>`;
   }
 
   /* ---------- viste ---------- */
@@ -593,8 +603,8 @@
   }
   function renderTrainView() {
     $('#trainBody').innerHTML = `
-      ${CATS.map(c => `<button type="button" class="cat" data-act="openCat" data-cat="${c.id}">${esc(c.name)}<small>${Object.values(c.drills).length > 1 ? Object.values(c.drills).join(' e ').toLowerCase() + ' · ' : ''}media ${avg(catTotals(c))}</small></button>`).join('')}
-      <p class="muted small">Scrivi tu quanti ne hai fatti e quanti ne hai tentati: sono statistiche tue, non le vede nessun altro.</p>`;
+      ${CATS.map(c => `<button type="button" class="cat" data-act="openCat" data-cat="${c.id}">${esc(c.name)}<small>allenamento ${avg(ofCtx(c.id, 'allenamento'))} · partita ${avg(ofCtx(c.id, 'partita'))}</small></button>`).join('')}
+      <p class="muted small">Scegli se segni un allenamento o una partita, scrivi quanti tentativi e quanti riusciti: la media si calcola da sola, separata per allenamento e partita. I numeri li vedi solo tu.</p>`;
   }
   function renderProfile() {
     const p = state.profile;
@@ -663,8 +673,12 @@
       if ((el = q('[data-sendgame]'))) { if (!state.friends.length) { toast('Aggiungi un amico dalla sezione Chat o dal profilo per mandargli la partita'); return; } openSheet('pickFriend', null, { gameId: el.dataset.sendgame }); return; }
       if ((el = q('[data-pickgame]'))) { openSheet('pickGame', el.dataset.pickgame); return; }
       if ((el = q('[data-sharegame]'))) { const g = state.games.find(x => x.id === el.dataset.sharegame); if (g) openShare(Object.assign({ kind: 'game' }, g)); return; }
-      if ((el = q('[data-sharetrain]'))) { openShare({ kind: 'train', drill: el.dataset.sharetrain }); return; }
-      if ((el = q('[data-adddrill]'))) { openSheet('train', null, { adding: el.dataset.adddrill }); return; }
+      if ((el = q('[data-sharetrain]'))) { openShare({ kind: 'train', cat: el.dataset.sharetrain, ctx: state.sheet.ctx || 'allenamento' }); return; }
+      if ((el = q('[data-adddrill]'))) { openSheet('train', null, { cat: el.dataset.adddrill, ctx: state.sheet.ctx || 'allenamento', adding: true }); return; }
+      if ((el = q('[data-ctx]'))) {
+        if ($('#adder')) { $$('[data-ctx]').forEach(b => b.setAttribute('aria-pressed', b === el)); return; }   // nel modulo: sceglie dove salvare
+        openSheet('train', null, { cat: state.sheet.cat, ctx: el.dataset.ctx }); return;                        // nella scheda: cambia la statistica mostrata
+      }
       if ((el = q('[data-step]'))) { const inp = el.dataset.step === 'made' ? $('#addMade') : $('#addAtt'); inp.value = Math.max(el.dataset.step === 'made' ? 0 : 1, Math.min(200, Number(inp.value || 0) + Number(el.dataset.d))); return; }
       if ((el = q('[data-accept]'))) { makeFriend(el.dataset.accept); toast('Ora tu e ' + el.dataset.accept + ' siete amici: la chat è pronta'); refresh(); return; }
       if ((el = q('[data-decline]'))) { state.requests = state.requests.filter(x => x !== el.dataset.decline); save('requests'); refresh(); return; }
@@ -674,11 +688,12 @@
         if (a === 'create') openSheet('create', s.id);
         if (a === 'back') openSheet('court', s.id);
         if (a === 'openCat') openSheet('train', null, { cat: el.dataset.cat });
-        if (a === 'backTrain') openSheet('train', null, { cat: CAT_OF[$('#adder').dataset.drill].id });
+        if (a === 'backTrain') openSheet('train', null, { cat: s.cat, ctx: s.ctx });
         if (a === 'saveDrill') {
-          const d = $('#adder').dataset.drill, made = Number($('#addMade').value), att = Number($('#addAtt').value);
-          if (!(att >= 1) || !(made >= 0) || made > att) { toast('I ' + CAT_OF[d].fatti + ' non possono superare i ' + CAT_OF[d].tentati); return; }
-          state.train[d].push({ made, att, ts: Date.now() }); save('train'); toast('Sessione salvata'); openSheet('train', null, { cat: CAT_OF[d].id }); refresh();
+          const cat = catById($('#adder').dataset.cat), made = Number($('#addMade').value), att = Number($('#addAtt').value);
+          if (!(att >= 1) || !(made >= 0) || made > att) { toast('I ' + cat.fatti + ' non possono superare i ' + cat.tentati); return; }
+          const ctx = ($('[data-ctx][aria-pressed="true"]') || {}).dataset.ctx || 'allenamento';
+          state.train[cat.id].push({ made, att, ctx, ts: Date.now() }); save('train'); toast(ctx === 'partita' ? 'Salvato nelle statistiche di partita' : 'Salvato nelle statistiche di allenamento'); openSheet('train', null, { cat: cat.id, ctx }); refresh();
         }
       }
     });
