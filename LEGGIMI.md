@@ -43,7 +43,7 @@ js/config.js          zona iniziale della mappa, nome, durata delle segnalazioni
 js/app.js             logica dell'app
 manifest.webmanifest  nome, icone e colori dell'app installata
 sw.js                 service worker (fa aprire l'app anche con rete debole)
-icons/                icone esportate dall'autore da Illustrator (20 novembre 2026), usate senza ridimensionarle
+icons/                icone esportate dall'autore da Illustrator, solo simbolo senza scritta (20 novembre 2026), usate senza ridimensionarle
 ```
 
 ## Pubblicarla gratis su GitHub Pages
