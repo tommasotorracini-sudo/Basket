@@ -43,7 +43,7 @@ js/config.js          zona iniziale della mappa, nome, durata delle segnalazioni
 js/app.js             logica dell'app
 manifest.webmanifest  nome, icone e colori dell'app installata
 sw.js                 service worker (fa aprire l'app anche con rete debole)
-icons/                icone dal logo definitivo dell'autore (20 novembre 2026); favicon con il solo simbolo, perché a 32 px la scritta non si legge
+icons/                icone esportate dall'autore da Illustrator (20 novembre 2026), usate senza ridimensionarle
 ```
 
 ## Pubblicarla gratis su GitHub Pages
